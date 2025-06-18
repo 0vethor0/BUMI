@@ -1,38 +1,571 @@
-.App {
-  text-align: center;
+/* Generales y Resets */
+:root {
+    --primary-color: #28a79a; /* Verde azulado principal (se mantiene) */
+    --secondary-color: #38b1a3; /* Un tono ligeramente más claro (se mantiene) */
+    --text-dark: #333333; /* Un gris muy oscuro, casi negro */
+    --text-light: #F8F8F8; /* Un blanco roto, casi blanco */
+    --background-light: #f0f2f5; /* Se mantiene */
+    --background-white: #ffffff; /* Se mantiene */
+    --border-color: #ddd; /* Se mantiene */
+    --shadow-light: rgba(0, 0, 0, 0.1); /* Se mantiene */
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+body {
+    font-family: 'Open Sans', sans-serif;
+    color: var(--text-dark); /* Ahora usa el nuevo --text-dark */
+    line-height: 1.6;
+    background-color: var(--background-light);
+    /* Comentarios sobre el body se mantienen */
+    
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+h1, h2, h3, h4, h5, h6 {
+    color: var(--primary-color); /* Los títulos siguen siendo el color principal */
+    margin-bottom: 0.8em;
 }
 
-.App-link {
-  color: #61dafb;
+p {
+    margin-bottom: 1em;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+a {
+    text-decoration: none;
+    color: var(--primary-color); /* Los enlaces siguen siendo el color principal */
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Header */
+.header {
+    background-color: var(--primary-color);
+    color: var(--text-light); /* Ahora usa el nuevo --text-light para el texto general del header */
+    padding: 20px 0;
+}
+
+.header-top {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.logo {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: var(--text-light); /* Se mantiene el color claro */
+}
+
+.top-nav ul {
+    list-style: none;
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.top-nav ul li a {
+    color: var(--text-light); /* Se mantiene el color claro */
+    font-size: 0.95em;
+    padding: 5px 10px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.top-nav ul li a:hover {
+    background-color: var(--secondary-color);
+    text-decoration: none;
+}
+
+.top-nav ul li a.btn-register,
+.top-nav ul li a.btn-login {
+    border: 1px solid var(--text-light); /* Borde claro */
+    padding: 8px 15px;
+    border-radius: 5px;
+}
+
+.top-nav ul li a.btn-register:hover,
+.top-nav ul li a.btn-login:hover {
+    background-color: var(--text-light); /* Fondo claro en hover */
+    color: var(--primary-color); /* Texto primario en hover */
+}
+
+.header-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    flex-wrap: wrap;
+}
+
+.header-search-section {
+    flex: 2;
+    margin-right: 30px;
+    min-width: 300px;
+    text-align: left;
+}
+
+.header-search-section h1 {
+    color: var(--text-light); /* El H1 dentro del header sigue siendo claro */
+    font-size: 2.5em;
+    margin-bottom: 15px;
+}
+
+.header-search-section p {
+    color: var(--text-light); /* El párrafo dentro del header sigue siendo claro */
+    margin-bottom: 25px;
+}
+
+.btn-join-now {
+    background-color: var(--background-white); /* Fondo blanco */
+    color: var(--text-dark); /* Texto negro (nuevo --text-dark) */
+    border: 1px solid var(--text-dark); /* Borde con el nuevo --text-dark */
+    padding: 12px 25px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+    white-space: nowrap;
+    display: inline-block;
+    margin-bottom: 20px;
+}
+
+.btn-join-now:hover {
+    background-color: var(--background-light); /* Fondo gris claro en hover */
+    color: var(--primary-color); /* Texto color primario en hover */
+    border-color: var(--primary-color); /* Borde color primario en hover */
+    text-decoration: none;
+}
+
+.search-box {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.search-box input[type="text"] {
+    flex-grow: 1;
+    padding: 12px 15px;
+    border: none;
+    border-radius: 5px;
+    font-size: 1em;
+    outline: none;
+    min-width: 200px;
+}
+
+.search-box button {
+    background-color: var(--background-white); /* Fondo blanco */
+    color: var(--text-dark); /* Texto negro */
+    border: 1px solid var(--text-dark); /* Borde negro */
+    padding: 12px 25px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+.search-box button:hover {
+    background-color: #beebe4;
+}
+
+.header-image-card {
+    flex: 1;
+    background-color: var(--background-white);
+    border-radius: 8px;
+    padding: 25px;
+    text-align: center;
+    box-shadow: 0 4px 8px var(--shadow-light);
+    min-width: 250px;
+}
+
+.header-image-card .card-image {
+    max-width: 150px;
+    height: auto;
+    margin-bottom: 15px;
+}
+
+.header-image-card .card-text {
+    font-size: 2em;
+    font-weight: bold;
+    color: var(--primary-color); /* El texto de la tarjeta sigue siendo el color primario */
+}
+
+.header-image-card .card-subtext {
+    font-size: 1.2em;
+    color: #666; /* Se mantiene un gris medio para este subtexto */
+}
+
+/* Main Content */
+.main-content {
+    max-width: 1440px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+section {
+    background-color: var(--background-white);
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px var(--shadow-light);
+    margin-bottom: 30px;
+}
+
+section h2 {
+    text-align: center;
+    margin-bottom: 40px;
+    font-size: 2em;
+    color: var(--primary-color); /* Los H2 de las secciones siguen siendo color primario */
+}
+
+/* How to Use Section */
+.how-to-use-section .steps-container {
+    display: flex;
+    justify-content: space-around;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+.step-item {
+    flex: 1;
+    min-width: 280px;
+    text-align: center;
+    padding: 25px;
+    border-radius: 8px;
+    background-color: var(--background-light);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s ease;
+}
+
+.step-item:hover {
+    transform: translateY(-5px);
+}
+
+.step-icon {
+    font-size: 3em;
+    color: var(--primary-color);
+    margin-bottom: 15px;
+}
+
+.step-item h3 {
+    font-size: 1.3em;
+    color: var(--text-dark); /* H3 de los pasos ahora usa el nuevo --text-dark */
+    margin-bottom: 10px;
+}
+
+.step-item p {
+    color: #555; /* Párrafos de los pasos se mantienen en un gris */
+}
+
+/* Mission, Vision, Objectives Section */
+.mvo-content {
+    display: flex;
+    gap: 40px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+
+.mvo-image-container {
+    flex: 1;
+    min-width: 300px;
+    text-align: center;
+}
+
+.mvo-image {
+    max-width: 100%;
+    height: auto;
+    margin-bottom: 15px;
+    border-radius: 5px;
+}
+
+.mvo-image-text {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #666; /* Se mantiene un gris medio */
+}
+
+.mvo-text-container {
+    flex: 2;
+    min-width: 350px;
+}
+
+.mvo-text-container p {
+    margin-bottom: 1.5em;
+    color: var(--text-dark); /* Párrafo principal de MVO ahora usa el nuevo --text-dark */
+}
+
+.mvo-question-answer {
+    margin-bottom: 20px;
+    border-left: 4px solid var(--secondary-color);
+    padding-left: 15px;
+}
+
+.mvo-question-answer h4 {
+    font-size: 1.1em;
+    color: var(--primary-color); /* H4 de MVO se mantiene color primario */
+    margin-bottom: 5px;
+}
+
+.mvo-question-answer p {
+    font-size: 0.95em;
+    color: #555; /* Párrafos de MVO se mantienen en un gris */
+}
+
+/* Collective Need Section */
+.collective-need-section .info-blocks-container {
+    display: flex;
+    justify-content: space-around;
+    gap: 30px;
+    margin-top: 30px;
+    flex-wrap: wrap;
+}
+
+.info-block {
+    flex: 1;
+    min-width: 280px;
+    background-color: var(--background-light);
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+}
+
+.info-block-circle {
+    width: 25px;
+    height: 25px;
+    background-color: #38b1a3;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 5px;
+}
+
+.info-block p {
+    margin-bottom: 0;
+    color: #555; /* Párrafos de info-block se mantienen en un gris */
+    flex-grow: 1;
+}
+
+/* Footer */
+.footer {
+    background-color: var(--primary-color);
+    color: var(--text-light); /* El texto general del footer ahora usa el nuevo --text-light */
+    padding: 40px 20px 20px;
+    text-align: center;
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    max-width: 1200px;
+    margin: 0 auto 30px;
+    gap: 30px;
+}
+
+.footer-logo {
+    font-size: 2em;
+    font-weight: bold;
+    color: var(--text-light); /* El logo del footer se mantiene claro */
+    flex-basis: 100%;
+    margin-bottom: 20px;
+}
+
+.footer-social {
+    margin-top: 10px;
+    flex-basis: 100%;
+    margin-bottom: 20px;
+}
+
+.footer-social a {
+    color: var(--text-light); /* Los iconos sociales del footer se mantienen claros */
+    font-size: 1.5em;
+    margin: 0 10px;
+    transition: color 0.3s ease;
+}
+
+.footer-social a:hover {
+    color: var(--background-light);
+}
+
+.footer-links {
+    display: flex;
+    justify-content: space-around;
+    flex-grow: 1;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.footer-column {
+    text-align: left;
+    min-width: 150px;
+}
+
+.footer-column h4 {
+    color: var(--text-light); /* Títulos de las columnas del footer se mantienen claros */
+    margin-bottom: 15px;
+    font-size: 1.1em;
+}
+
+.footer-column ul {
+    list-style: none;
+}
+
+.footer-column ul li {
+    margin-bottom: 8px;
+}
+
+.footer-column ul li a {
+    color: var(--text-light); /* Enlaces del footer se mantienen claros */
+    font-size: 0.95em;
+}
+
+.footer-column ul li a:hover {
+    text-decoration: underline;
+}
+
+.footer-bottom {
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    padding-top: 20px;
+    margin-top: 20px;
+}
+
+.footer-bottom p {
+    font-size: 0.9em;
+    color: rgba(255, 255, 255, 0.8); /* El copyright se mantiene en un gris semi-transparente */
+    margin: 0;
+}
+
+
+/* Media Queries para Responsividad */
+@media (max-width: 1024px) {
+    .header-main {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    .header-search-section {
+        margin-right: 0;
+        margin-bottom: 30px;
+    }
+    .header-search-section h1 {
+        font-size: 2em;
+    }
+    .header-image-card {
+        margin-top: 20px;
+    }
+
+    .mvo-content {
+        flex-direction: column;
+    }
+    .mvo-image-container, .mvo-text-container {
+        min-width: unset;
+        width: 100%;
+    }
+    .top-nav ul {
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    .search-box {
+        flex-direction: column;
+        align-items: center;
+    }
+    .search-box input[type="text"],
+    .search-box button {
+        width: 100%;
+        margin-top: 10px;
+    }
+    /* En pantallas pequeñas, el botón "Únete Ahora" también ocupará todo el ancho */
+    .btn-join-now {
+        width: 100%;
+        margin-bottom: 20px;
+        margin-top: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        padding: 0 15px;
+    }
+    section {
+        padding: 30px 20px;
+    }
+    .steps-container, .info-blocks-container {
+        flex-direction: column;
+        align-items: center;
+    }
+    .step-item, .info-block {
+        min-width: unset;
+        width: 90%;
+    }
+    .search-box {
+        flex-direction: column;
+    }
+    .search-box button {
+        width: 100%;
+        margin-top: 10px;
+    }
+
+    .footer-content {
+        flex-direction: column;
+        align-items: center;
+    }
+    .footer-column {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    .footer-social {
+        margin-bottom: 20px;
+    }
+    .header-top {
+        flex-direction: column;
+        gap: 15px;
+    }
+    .top-nav {
+        width: 100%;
+        text-align: center;
+    }
+    .top-nav ul {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-search-section h1 {
+        font-size: 1.8em;
+    }
+    .search-box input, .search-box button {
+        padding: 10px;
+        font-size: 0.9em;
+    }
+    h2 {
+        font-size: 1.8em;
+    }
+    .footer-logo {
+        font-size: 1.8em;
+    }
+    .top-nav ul {
+        flex-direction: column;
+        gap: 5px;
+    }
+    .top-nav ul li a {
+        padding: 5px 0;
+        width: 100%;
+        display: block;
+    }
 }
