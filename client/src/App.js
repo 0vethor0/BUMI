@@ -1,8 +1,10 @@
 import React from 'react';
-import './App.css'; // Asumiendo que App.css está en el mismo directorio que App.js
+
+import '../src/App.css'; 
 import '@fortawesome/fontawesome-free/css/all.min.css';
-import logoImage from './src/images/logo.png'; // Ruta: src/images/logo.png
-import ingSistemasLogo from './src/images/logo ING Sistemas.jpg'; // Ruta: src/images/logo ING Sistemas.jpg
+import logoImage from './image/logo.png'; // Ruta: src/images/logo.png
+import ingSistemasLogo from './image/logo ING Sistemas.jpg'; // Ruta: src/images/logo ING Sistemas.jpg
+import '../src/index.css';
 
 function App() {
   return (
