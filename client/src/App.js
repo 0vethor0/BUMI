@@ -28,7 +28,7 @@ function App() {
           </div>
 
           <div className="header-image-card">
-            <img src="/images/logo.png" alt="BUMI Logo con birrete" className="card-image" />
+            <img src="/src/image/logo.png" alt="BUMI Logo con birrete" className="card-image" />
           </div>
         </div>
       </header>
