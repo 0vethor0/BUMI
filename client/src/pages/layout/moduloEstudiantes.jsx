@@ -171,7 +171,7 @@ const ModuloEstudiantes = () => {
                         <li><a href="http://localhost:3000/moduloTutores"><i className="fas fa-chalkboard-teacher"></i> <span>Tutores</span></a></li>
                         <li className={styles.active}><a href="#"><i className="fas fa-user-graduate"></i> <span>Estudiantes</span></a></li>
                         <li><a href="#"><i className="fas fa-users"></i> <span>Grupos</span></a></li>
-                        <li><a href="#"><i className="fas fa-project-diagram"></i> <span>Proyectos</span></a></li>
+                        <li><a href="http://localhost:3000/moduloProyectos"><i className="fas fa-project-diagram"></i> <span>Proyectos</span></a></li>
                         <li><a href="#"><i className="fas fa-clipboard-list"></i> <span>Estado de Proyecto</span></a></li>
                     </ul>
                     <ul className={styles.logout}>
