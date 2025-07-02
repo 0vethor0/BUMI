@@ -5,17 +5,22 @@ import styles from '../styles/ModuloEstudiantes.module.css';
 const ModuloEstudiantes = () => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [students, setStudents] = useState([
-        { id: 1, cedula: 'V30523083', firstName: 'Yander', lastName: 'Graterol', career: 'Ing en Sistemas', group: 'Grupo A' }
+        { id: 1, cedula: 'V30523083', firstName: 'Yander', secondName: '', lastName: 'Graterol', secondLastName: '', career: 'Ing en Sistemas', cedulaTutor: 'V12345678' }
     ]);
     const [selectedRowId, setSelectedRowId] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
     const [newRowData, setNewRowData] = useState({
         cedula: '',
         firstName: '',
+        secondName: '',
         lastName: '',
+        secondLastName: '',
         career: '',
-        group: ''
+        cedulaTutor: ''
     });
+
+    const careerOptions = ['Ing en Sistemas', 'Ing Civil', 'Medicina', 'Derecho'];
+    const tutorCedulaOptions = ['V12345678', 'V87654321', 'V11223344'];
 
     const toggleSidebar = () => {
         setSidebarCollapsed(!sidebarCollapsed);
@@ -41,9 +46,11 @@ const ModuloEstudiantes = () => {
         setNewRowData({
             cedula: '',
             firstName: '',
+            secondName: '',
             lastName: '',
+            secondLastName: '',
             career: '',
-            group: ''
+            cedulaTutor: ''
         });
     };
 
@@ -63,9 +70,11 @@ const ModuloEstudiantes = () => {
                 setNewRowData({
                     cedula: '',
                     firstName: '',
+                    secondName: '',
                     lastName: '',
+                    secondLastName: '',
                     career: '',
-                    group: ''
+                    cedulaTutor: ''
                 });
             }
         } else {
@@ -89,9 +98,11 @@ const ModuloEstudiantes = () => {
             setNewRowData({
                 cedula: '',
                 firstName: '',
+                secondName: '',
                 lastName: '',
+                secondLastName: '',
                 career: '',
-                group: ''
+                cedulaTutor: ''
             });
             alert('Cambios guardados exitosamente.');
         }
@@ -109,9 +120,11 @@ const ModuloEstudiantes = () => {
             setNewRowData({
                 cedula: '',
                 firstName: '',
+                secondName: '',
                 lastName: '',
+                secondLastName: '',
                 career: '',
-                group: ''
+                cedulaTutor: ''
             });
             alert('Edición cancelada.');
         } else {
@@ -139,6 +152,12 @@ const ModuloEstudiantes = () => {
 
     return (
         <div className={`${styles.container} ${sidebarCollapsed ? styles.collapsed : ''}`}>
+            <link
+                href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+                rel="stylesheet"
+                integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM"
+                crossorigin="anonymous"
+            />
             <aside className={styles.sidebar}>
                 <div className={styles.sidebarHeader}>
                     <div className={styles.logo} id="sidebarToggle" onClick={toggleSidebar}>
@@ -157,7 +176,7 @@ const ModuloEstudiantes = () => {
                     </ul>
                     <ul className={styles.logout}>
                         <li><a href="#"><i className="fas fa-cog"></i> <span>Configuracion</span></a></li>
-                        <li><a href="#"><i className="fas fa-sign-out-alt"></i> <span>Salir</span></a></li>
+                        <li><a href="http://localhost:3000"><i className="fas fa-sign-out-alt"></i> <span>Salir</span></a></li>
                     </ul>
                 </nav>
             </aside>
@@ -186,9 +205,11 @@ const ModuloEstudiantes = () => {
                                 <tr>
                                     <th>Cedula</th>
                                     <th>Primer Nombre</th>
+                                    <th>Segundo Nombre</th>
                                     <th>Primer Apellido</th>
+                                    <th>Segundo Apellido</th>
                                     <th>Carrera</th>
-                                    <th>Agrupación</th>
+                                    <th>Cédula Tutor</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -196,9 +217,33 @@ const ModuloEstudiantes = () => {
                                     <tr className={styles.selected}>
                                         <td><input type="text" value={newRowData.cedula} onChange={(e) => handleInputChange(e, 'cedula')} /></td>
                                         <td><input type="text" value={newRowData.firstName} onChange={(e) => handleInputChange(e, 'firstName')} /></td>
+                                        <td><input type="text" value={newRowData.secondName} onChange={(e) => handleInputChange(e, 'secondName')} /></td>
                                         <td><input type="text" value={newRowData.lastName} onChange={(e) => handleInputChange(e, 'lastName')} /></td>
-                                        <td><input type="text" value={newRowData.career} onChange={(e) => handleInputChange(e, 'career')} /></td>
-                                        <td><input type="text" value={newRowData.group} onChange={(e) => handleInputChange(e, 'group')} /></td>
+                                        <td><input type="text" value={newRowData.secondLastName} onChange={(e) => handleInputChange(e, 'secondLastName')} /></td>
+                                        <td>
+                                            <select
+                                                className="form-select"
+                                                value={newRowData.career}
+                                                onChange={(e) => handleInputChange(e, 'career')}
+                                            >
+                                                <option value="">Seleccione una carrera</option>
+                                                {careerOptions.map((option, index) => (
+                                                    <option key={index} value={option}>{option}</option>
+                                                ))}
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select
+                                                className="form-select"
+                                                value={newRowData.cedulaTutor}
+                                                onChange={(e) => handleInputChange(e, 'cedulaTutor')}
+                                            >
+                                                <option value="">Seleccione un tutor</option>
+                                                {tutorCedulaOptions.map((option, index) => (
+                                                    <option key={index} value={option}>{option}</option>
+                                                ))}
+                                            </select>
+                                        </td>
                                     </tr>
                                 )}
                                 {students.map(student => (
@@ -211,17 +256,43 @@ const ModuloEstudiantes = () => {
                                             <>
                                                 <td><input type="text" value={newRowData.cedula} onChange={(e) => handleInputChange(e, 'cedula')} /></td>
                                                 <td><input type="text" value={newRowData.firstName} onChange={(e) => handleInputChange(e, 'firstName')} /></td>
+                                                <td><input type="text" value={newRowData.secondName} onChange={(e) => handleInputChange(e, 'secondName')} /></td>
                                                 <td><input type="text" value={newRowData.lastName} onChange={(e) => handleInputChange(e, 'lastName')} /></td>
-                                                <td><input type="text" value={newRowData.career} onChange={(e) => handleInputChange(e, 'career')} /></td>
-                                                <td><input type="text" value={newRowData.group} onChange={(e) => handleInputChange(e, 'group')} /></td>
+                                                <td><input type="text" value={newRowData.secondLastName} onChange={(e) => handleInputChange(e, 'secondLastName')} /></td>
+                                                <td>
+                                                    <select
+                                                        className="form-select"
+                                                        value={newRowData.career}
+                                                        onChange={(e) => handleInputChange(e, 'career')}
+                                                    >
+                                                        <option value="">Seleccione una carrera</option>
+                                                        {careerOptions.map((option, index) => (
+                                                            <option key={index} value={option}>{option}</option>
+                                                        ))}
+                                                    </select>
+                                                </td>
+                                                <td>
+                                                    <select
+                                                        className="form-select"
+                                                        value={newRowData.cedulaTutor}
+                                                        onChange={(e) => handleInputChange(e, 'cedulaTutor')}
+                                                    >
+                                                        <option value="">Seleccione un tutor</option>
+                                                        {tutorCedulaOptions.map((option, index) => (
+                                                            <option key={index} value={option}>{option}</option>
+                                                        ))}
+                                                    </select>
+                                                </td>
                                             </>
                                         ) : (
                                             <>
                                                 <td>{student.cedula}</td>
                                                 <td>{student.firstName}</td>
+                                                <td>{student.secondName}</td>
                                                 <td>{student.lastName}</td>
+                                                <td>{student.secondLastName}</td>
                                                 <td>{student.career}</td>
-                                                <td>{student.group}</td>
+                                                <td>{student.cedulaTutor}</td>
                                             </>
                                         )}
                                     </tr>
