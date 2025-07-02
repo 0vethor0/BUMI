@@ -21,12 +21,12 @@ const PaginaPrincipal=()=>{
                     <a href="#">Contacto</a>
                 </li>
                 <li>
-                    <a href="#" className="btn-register">
+                    <a href="http://localhost:3000/login" className="btn-register">
                     Register
                     </a>
                 </li>
                 <li>
-                    <a href="#" className="btn-login">
+                    <a href="http://localhost:3000/login" className="btn-login">
                     Login
                     </a>
                 </li>
