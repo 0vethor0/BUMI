@@ -1,0 +1,319 @@
+    * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: rgba(73, 181, 172, 0.5);
+    }
+
+    .wrapper {
+    position: relative;
+    width: 750px;
+    height: 450px;
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 0 25px rgb(255, 255, 255);
+    }
+
+    .wrapper.active .formBox.login,
+    .wrapper.active .infoText.login {
+    pointer-events: none;
+    }
+
+    .wrapper.active .formBox.register,
+    .wrapper.active .infoText.register {
+    pointer-events: auto;
+    }
+
+    .formBox {
+    position: absolute;
+    top: 0;
+    width: 50%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    }
+
+    .formBox.login {
+    left: 0;
+    padding: 0 60px 0 40px;
+    }
+
+    .formBox.login .animation {
+    transform: translateX(0);
+    transition: transform 0.7s ease, opacity 0.7s ease, filter 0.7s ease;
+    opacity: 1;
+    filter: blur(0);
+    transition-delay: calc(0.1s * var(--j));
+    }
+
+    .wrapper.active .formBox.login .animation {
+    transform: translateX(-120%);
+    opacity: 0;
+    filter: blur(10px);
+    transition-delay: calc(0.1s * var(--i));
+    }
+
+    .formBox.register {
+    right: 0;
+    padding: 0 40px 0 60px;
+    pointer-events: none;
+    }
+
+    .formBox.register .animation {
+    transform: translateX(120%);
+    opacity: 0;
+    filter: blur(10px);
+    transition: transform 0.7s ease, opacity 0.7s ease, filter 0.7s ease;
+    transition-delay: calc(0.1s * var(--j));
+    }
+
+    .wrapper.active .formBox.register .animation {
+    transform: translateX(0);
+    opacity: 1;
+    filter: blur(0);
+    transition-delay: calc(0.1s * var(--i));
+    }
+
+    .infoText {
+    position: absolute;
+    top: 0;
+    width: 50%;
+    height: 100%;
+    color: white;
+    font-size: 19px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    }
+
+    .infoText.login {
+    right: 0;
+    text-align: right;
+    padding: 0 40px 60px 150px;
+    }
+
+    .infoText.login .animation {
+    transform: translateX(0);
+    transition: transform 0.7s ease, opacity 0.7s ease, filter 0.7s ease;
+    opacity: 1;
+    filter: blur(0);
+    transition-delay: calc(0.1s * var(--j));
+    }
+
+    .wrapper.active .infoText.login .animation {
+    transform: translateX(120%);
+    opacity: 0;
+    filter: blur(12px);
+    transition-delay: calc(0.1s * var(--i));
+    }
+
+    .infoText.register {
+    left: 0;
+    text-align: left;
+    padding: 0 150px 60px 40px;
+    pointer-events: none;
+    }
+
+    .infoText.register .animation {
+    transform: translateX(-120%);
+    opacity: 0;
+    filter: blur(12px);
+    transition: transform 0.7s ease, opacity 0.7s ease, filter 0.7s ease;
+    transition-delay: calc(0.1s * var(--j));
+    }
+
+    .wrapper.active .infoText.register .animation {
+    transform: translateX(0);
+    opacity: 1;
+    filter: blur(0);
+    transition-delay: calc(0.1s * var(--i));
+    }
+
+    .infoText.register h2 {
+    font-size: 36px;
+    margin-left: 40px;
+    margin-top: 20px;
+    }
+
+    .formBox h2 {
+    font-size: 32px;
+    color: black;
+    text-align: center;
+    }
+
+    .infoText h2 {
+    line-height: 1.3;
+    text-transform: uppercase;
+    }
+
+        /* Para el título BUMI en el panel de registro */
+    .infoText.register h2 {
+        color: #fff;
+    }
+
+    /* Para el título ¡Bienvenido! en el panel de login */
+    .infoText.login h2 {
+        color: #fff;
+    }
+
+    .inputBox {
+    position: relative;
+    width: 100%;
+    height: 50px;
+    margin: 25px 0;
+    }
+
+    .inputBox input {
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    border-bottom: 2px solid #050000;
+    padding-right: 23px;
+    font-size: 16px;
+    color: black;
+    font-weight: 500;
+    transition: border-bottom-color 0.5s;
+    }
+
+    .inputBox input:focus,
+    .inputBox input:valid {
+    border-bottom-color: white;
+    }
+
+    .inputBox label {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    font-size: 13px;
+    color: #050000;
+    pointer-events: none;
+    transition: top 0.5s, color 0.5s;
+    }
+
+    .inputBox input:focus ~ label,
+    .inputBox input:valid ~ label {
+    top: -5px;
+    color: #050000;
+    }
+
+    .inputBox i {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    font-size: 18px;
+    color: #050000;
+    transition: color 0.5s;
+    }
+
+    .inputBox input:focus ~ i,
+    .inputBox input:valid ~ i {
+    color: white;
+    }
+
+    .btn {
+    position: relative;
+    width: 100%;
+    height: 40px;
+    background: transparent;
+    border: 2px solid #49b5ac;
+    outline: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #49b5ac;
+    font-weight: 600;
+    z-index: 1;
+    overflow: hidden;
+    }
+
+    .btn::before {
+    content: '';
+    position: absolute;
+    top: -100%;
+    left: 0;
+    width: 100%;
+    height: 300%;
+    z-index: -1;
+    transition: top 0.5s;
+    }
+
+    .btn:hover::before {
+    top: 0;
+    }
+
+    .btn:hover {
+    background: #49b5ac;
+    color: white;
+    }
+
+    .logregLink {
+    font-size: 14.5px;
+    color: #050000;
+    text-align: center;
+    margin: 20px 0 10px;
+    }
+
+    .logregLink p a {
+    color: #0958ce;
+    text-decoration: none;
+    font-weight: 600;
+    }
+
+    .logregLink p a:hover {
+    text-decoration: underline;
+    }
+
+    .bgAnimate {
+    position: absolute;
+    top: -4px;
+    right: 0;
+    width: 850px;
+    height: 600px;
+    background: #67C7BD;
+    transform: rotate(10deg) skewY(40deg);
+    transform-origin: bottom right;
+    transition: transform 1.5s ease;
+    transition-delay: 1.6s;
+    }
+
+    .wrapper.active .bgAnimate {
+    transform: rotate(0) skewY(0);
+    transition-delay: 0.5s;
+    }
+
+    .bgAnimate2 {
+    position: absolute;
+    top: 100%;
+    left: 250px;
+    width: 850px;
+    height: 700px;
+    background: white;
+    transform: rotate(0) skewY(0);
+    border-bottom: 3px solid #67C7BD;
+    transform-origin: bottom left;
+    transition: transform 1.5s ease;
+    transition-delay: 0.5s;
+    }
+
+    .wrapper.active .bgAnimate2 {
+    transform: rotate(-11deg) skewY(-41deg);
+    transition-delay: 1.2s;
+    }
+
+    .hidden {
+    pointer-events: none;
+    }
