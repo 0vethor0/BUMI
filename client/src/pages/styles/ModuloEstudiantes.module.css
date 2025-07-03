@@ -229,6 +229,7 @@
     border-radius: 5px;
     padding: 8px 12px;
     margin-bottom: 20px;
+    gap: 10px;
 }
 
 .searchBar i {
@@ -242,6 +243,12 @@
     flex-grow: 1;
     font-size: 1em;
     padding: 0;
+}
+
+.searchBar button {
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
 }
 
 .dataTableContainer {
