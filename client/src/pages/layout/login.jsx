@@ -29,7 +29,7 @@ const Login = () => {
 
         return (
                 <div className={styles.container} style={{ position: 'relative' }}>
-                        {/* Botón de salida */}
+                        
                         <button
                                 onClick={handleExit}
                                 style={{
@@ -47,11 +47,11 @@ const Login = () => {
                                 <ExitIcon />
                         </button>
                         <div className={`${styles.wrapper} ${isRegisterActive ? styles.active : ''}`}>
-                                {/* Background animation spans */}
+                                
                                 <span className={styles.bgAnimate}></span>
                                 <span className={styles.bgAnimate2}></span>
 
-                                {/* Login Form */}
+                                
                                 <div className={`${styles.formBox} ${styles.login} ${isRegisterActive ? styles.hidden : ''}`}>
                                         <h2 className={styles.animation} style={{ '--i': 0, '--j': 21 }}>BUMI</h2>
                                         <div>
@@ -65,7 +65,12 @@ const Login = () => {
                                                         <label>Contraseña</label>
                                                         <i className="bx bx-lock"></i>
                                                 </div>
-                                                <button type="button" className={`${styles.btn} ${styles.animation}`} style={{ '--i': 3, '--j': 24 }}>
+                                                <button
+                                                        type="button"
+                                                        className={`${styles.btn} ${styles.animation}`}
+                                                        style={{ '--i': 3, '--j': 24 }}
+                                                        onClick={() => window.location.href = "http://localhost:3000/moduloEstudiantes"}
+                                                >
                                                         Ingresar
                                                 </button>
                                                 <div className={`${styles.logregLink} ${styles.animation}`} style={{ '--i': 4, '--j': 25 }}>
@@ -79,7 +84,7 @@ const Login = () => {
                                         </div>
                                 </div>
 
-                                {/* Login Info Text */}
+                                
                                 <div className={`${styles.infoText} ${styles.login} ${isRegisterActive ? styles.hidden : ''}`}>
                                         <h2 className={styles.animation} style={{ '--i': 0, '--j': 20 }}>
                                                 ¡Bienvenido!
@@ -91,7 +96,7 @@ const Login = () => {
                                         />
                                 </div>
 
-                                {/* Register Form */}
+                                
                                 <div className={`${styles.formBox} ${styles.register} ${isRegisterActive ? '' : styles.hidden}`}>
                                         <h2 className={styles.animation} style={{ '--i': 17, '--j': 0 }}>
                                                 Registro
@@ -126,7 +131,7 @@ const Login = () => {
                                         </div>
                                 </div>
 
-                                {/* Register Info Text */}
+                                
                                 <div className={`${styles.infoText} ${styles.register} ${isRegisterActive ? '' : styles.hidden}`}>
                                         <h2 className={styles.animation} style={{ '--i': 17, '--j': 0 }}>
                                                 BUMI

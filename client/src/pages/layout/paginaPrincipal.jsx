@@ -7,6 +7,10 @@ import '../../index.css';
 
 const PaginaPrincipal=()=>{
 
+    const handleBuscarClick = () => {
+        window.location.href = "http://localhost:3000/buscador";
+    };
+
     return(
             <>
             <header className="header">
@@ -50,7 +54,7 @@ const PaginaPrincipal=()=>{
 
                 <div className="search-box">
                 <input type="text" placeholder="¿Qué necesitas buscar?" />
-                <button>Buscar</button>
+                <button onClick={handleBuscarClick} >Buscar</button>
                 </div>
             </div>
 

@@ -190,7 +190,7 @@ const ModuloTutores = () => {
                 console.log('Cambios guardados, estado reseteado');
             } catch (error) {
                 console.error('Error al guardar tutor:', error);
-                alert('Error al guardar los cambios');
+                alert('Error al registrar tutor, ya esta existente');
             }
         }
     };

@@ -5,12 +5,14 @@ import ModuloEstudiantes from './pages/layout/moduloEstudiantes';
 import ModuloTutores from './pages/layout/moduloTutores';
 import Login from './pages/layout/login';
 import ModuloProyectos from './pages/layout/moduloProyectos';
+import BuscadorPrincipal from './pages/layout/BuscadorPrincipal';
 
 
 function App (){
   return (
     <BrowserRouter>
       <Routes>
+        <Route path='/buscador' element={<BuscadorPrincipal/>}/>
         <Route path='/login' element={<Login/>}/>
         <Route path='/moduloTutores' element={<ModuloTutores/>}/>
         <Route path='/moduloEstudiantes' element={<ModuloEstudiantes/>}/>
