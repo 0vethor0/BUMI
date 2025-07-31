@@ -6,7 +6,7 @@ BUMI-UNEFA (Buscador de Material de Investigación de la UNEFA) es una aplicaci�
 
 BUMI-UNEFA supera las limitaciones de los sistemas de archivo tradicionales al ofrecer una plataforma colaborativa con una interfaz intuitiva, fomentando el descubrimiento de investigaciones, la replicación de estudios y la colaboración académica. Su visión es convertirse en el eje central de la gestión del conocimiento en la UNEFA, democratizando el acceso al conocimiento y elevando la calidad y visibilidad de la producción científica de la institución.
 
-###Características principales
+### Características principales
 
 - **Centralización de recursos**: Almacena y organiza materiales académicos en un solo lugar.
 - **Interfaz amigable**: Diseñada para usuarios de todos los niveles tecnológicos.
@@ -30,7 +30,7 @@ BUMI-UNEFA supera las limitaciones de los sistemas de archivo tradicionales al o
 - MySQL para la base de datos.
 - Un entorno de desarrollo como XAMPP o Laravel Sail.
 
-###Instalacion
+### Instalacion
 
 1. Clona el repositorio:
 
@@ -98,7 +98,7 @@ Si necesitas ayuda con el proyecto, puedes contactar al mantenedor principal a t
 - **Redes sociales**: @vincent_fernandez
 - **Issues**: Abre un *issue* en el repositorio para reportar errores o sugerir mejoras.
 
-###Anexos
+### Anexos
 
 Pagina del Buscador Principal:
 
