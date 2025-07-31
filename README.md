@@ -1,6 +1,6 @@
 # BUMI-UNEFA
 
-## Descripción
+### Descripción
 
 BUMI-UNEFA (Buscador de Material de Investigación de la UNEFA) es una aplicación web diseñada para centralizar y optimizar la gestión de materiales e informes de investigación generados en la Universidad Nacional Experimental Politécnica de la Fuerza Armada Nacional Bolivariana (UNEFA). Este repositorio digital dinámico permite a estudiantes, profesores, investigadores y cualquier persona interesada registrar, organizar, consultar y descargar documentos académicos como proyectos de grado, tesis, artículos científicos, informes técnicos y presentaciones.
 
@@ -19,8 +19,6 @@ BUMI-UNEFA supera las limitaciones de los sistemas de archivo tradicionales al o
 
 ![](https://i.ibb.co/rG5g3T03/vista-previa.webp)
 
-[TOCM]
-
 ## Cómo comenzar
 
 ### Prerrequisitos
@@ -38,25 +36,36 @@ BUMI-UNEFA supera las limitaciones de los sistemas de archivo tradicionales al o
    git clone https://github.com/0vethor0/BUMI.git
    ```
 
-2. Navega al directorio del proyecto y ejecuta npm para instalar las dependencias:
+2. Navega al directorio del proyecto:
 
    ```bash
    cd ./client/
-   npm install
    ```
+3. Ejecuta npm para instalar las dependencias:
 
+ ```bash
+ npm install
+ ```
 3. Instala las dependencias del backend:
 
-	Abre una nueva ventana en tu editor de codigo y clona el repositorio:
+Abre una nueva ventana en tu editor de codigo y clona el repositorio:
    ```bash
   git clone https://github.com/0vethor0/dbServer_BUMI
    ```
-	Navega al directorio principal e instala las dependencias:
-   ```bash
+Navega al directorio principal:
+
+```bash
   cd ./db_BUMI_ApiRest/
+```
+
+Instala las dependencias:
+ ```bash
   composer install
+ ```
+ ```bash
   npm install
-   ```
+ ```
+
 4. Configura el archivo `.env` en el directorio `backend` con tus credenciales de base de datos.
 
 5. Ejecuta las migraciones de la base de datos:
@@ -68,14 +77,12 @@ BUMI-UNEFA supera las limitaciones de los sistemas de archivo tradicionales al o
 6. Inicia el servidor backend:
 
    ```bash
-   cd ./db_BUMI_ApiRest/
    php artisan serve
    ```
 
 7. Inicia el servidor frontend:
 
    ```bash
-   cd ./client/
    npm start
    ```
 
