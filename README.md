@@ -17,7 +17,7 @@ BUMI-UNEFA supera las limitaciones de los sistemas de archivo tradicionales al o
 
 ### Vista Previa
 
-![](https://i.ibb.co/rG5g3T03/vista-previa.webp)
+![pagina principal](https://i.ibb.co/rG5g3T03/vista-previa.webp)
 
 ## Cómo comenzar
 
@@ -109,7 +109,7 @@ Si necesitas ayuda con el proyecto, puedes contactar al mantenedor principal a t
 
 Pagina del Buscador Principal:
 
-![](https://i.ibb.co/BKPMzSTC/Pagina-Principal.webp)
+![Principal Page](https://i.ibb.co/BKPMzSTC/Pagina-Principal.webp)
 
 ---
 
