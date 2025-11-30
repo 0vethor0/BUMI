@@ -11,7 +11,7 @@ BUMI-UNEFA supera las limitaciones de los sistemas de archivo tradicionales al o
 - **Centralización de recursos**: Almacena y organiza materiales académicos en un solo lugar.
 - **Interfaz amigable**: Diseñada para usuarios de todos los niveles tecnológicos.
 - **Colaboración académica**: Facilita la interacción y el descubrimiento de investigaciones.
-- **Escalabilidad**: Construida con tecnologías modernas como React.js para el frontend y Laravel con PHP para el backend.
+- **Escalabilidad**: Construida con tecnologías modernas como Next.js para el frontend y Laravel con PHP para el backend.
 - **Accesibilidad**: Permite consultar y descargar documentos de manera eficiente.
 
 
@@ -30,23 +30,35 @@ BUMI-UNEFA supera las limitaciones de los sistemas de archivo tradicionales al o
 
 ### Instalacion
 
+> **Nota importante**: Este proyecto ha sido migrado de React.js (Create React App) a Next.js. El frontend ahora está en la raíz del proyecto, no en la carpeta `client/`. Si encuentras referencias a `client/` en documentación antigua, ignóralas ya que esa carpeta se mantiene solo como respaldo.
+
 1. Clona el repositorio:
 
    ```bash
    git clone https://github.com/0vethor0/BUMI.git
    ```
 
-2. Navega al directorio del proyecto:
+2. Navega al directorio del proyecto (raíz del repositorio):
 
    ```bash
-   cd ./client/
+   cd BUMI
    ```
-3. Ejecuta npm para instalar las dependencias:
+
+3. Instala las dependencias del frontend (Next.js):
 
  ```bash
  npm install
  ```
-3. Instala las dependencias del backend:
+
+4. Configura las variables de entorno:
+
+   Crea un archivo `.env.local` en la raíz del proyecto con la siguiente configuración:
+
+   ```env
+   NEXT_PUBLIC_API_URL=http://127.0.0.1:8000/api
+   ```
+
+5. Instala las dependencias del backend:
 
 Abre una nueva ventana en tu editor de codigo y clona el repositorio:
    ```bash
@@ -62,29 +74,34 @@ Instala las dependencias:
  ```bash
   composer install
  ```
- ```bash
-  npm install
- ```
 
-4. Configura el archivo `.env` en el directorio `backend` con tus credenciales de base de datos.
+6. Configura el archivo `.env` en el directorio del backend con tus credenciales de base de datos.
 
-5. Ejecuta las migraciones de la base de datos:
+7. Ejecuta las migraciones de la base de datos:
 
    ```bash
    php artisan migrate
    ```
 
-6. Inicia el servidor backend:
+8. Inicia el servidor backend (en el directorio del backend):
 
    ```bash
    php artisan serve
    ```
 
-7. Inicia el servidor frontend:
+9. Inicia el servidor frontend Next.js (asegúrate de estar en la raíz del proyecto BUMI):
 
    ```bash
-   npm start
+   npm run dev
    ```
+
+   > **Nota sobre comandos**: 
+   > - `npm run dev` - Inicia el servidor de desarrollo (con hot-reload)
+   > - `npm start` - Inicia el servidor de producción (requiere `npm run build` primero)
+   > 
+   > Si vienes de React.js, el equivalente a `npm start` de Create React App ahora es `npm run dev` en Next.js.
+
+   El frontend estará disponible en `http://localhost:3000`
 
 ## Contribuir
 
