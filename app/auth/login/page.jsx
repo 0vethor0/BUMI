@@ -1,8 +1,10 @@
+// app/auth/login/page.jsx
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from '../../styles/Login.module.css';
+import { supabase } from '@/lib/supabaseClient'; // ← Asegúrate de tener este archivo
 
 const ExitIcon = () => (
     <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
@@ -12,16 +14,32 @@ const ExitIcon = () => (
 
 const Login = () => {
     const [isRegisterActive, setIsRegisterActive] = useState(false);
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
     const router = useRouter();
 
-    const handleRegisterClick = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
-        setIsRegisterActive(true);
-    };
+        setLoading(true);
+        setError('');
 
-    const handleLoginClick = (e) => {
-        e.preventDefault();
-        setIsRegisterActive(false);
+        const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+        });
+
+        if (error) {
+        setError(error.message === 'Invalid login credentials' 
+            ? 'Usuario o contraseña incorrectos' 
+            : error.message);
+        setLoading(false);
+        return;
+        }
+
+        // Login exitoso
+        router.push('/dashboard/moduloProyectos');
     };
 
     const handleExit = () => {
@@ -30,119 +48,87 @@ const Login = () => {
 
     return (
         <div className={styles.container} style={{ position: 'relative' }}>
-            <button
-                onClick={handleExit}
-                style={{
-                    position: 'absolute',
-                    top: 16,
-                    right: 16,
-                    background: 'transparent',
-                    border: 'none',
-                    cursor: 'pointer',
-                    zIndex: 10,
-                    padding: 4,
-                }}
-                aria-label="Salir"
-            >
-                <ExitIcon />
-            </button>
-            <div className={`${styles.wrapper} ${isRegisterActive ? styles.active : ''}`}>
-                <span className={styles.bgAnimate}></span>
-                <span className={styles.bgAnimate2}></span>
+        <button
+            onClick={handleExit}
+            style={{
+            position: 'absolute',
+            top: 16,
+            right: 16,
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            zIndex: 10,
+            padding: 4,
+            }}
+            aria-label="Salir"
+        >
+            <ExitIcon />
+        </button>
 
-                <div className={`${styles.formBox} ${styles.login} ${isRegisterActive ? styles.hidden : ''}`}>
-                    <h2 className={styles.animation} style={{ '--i': 0, '--j': 21 }}>BUMI</h2>
-                    <div>
-                        <div className={`${styles.inputBox} ${styles.animation}`} style={{ '--i': 1, '--j': 22 }}>
-                            <input type="text" required />
-                            <label>Usuario</label>
-                            <i className="bx bx-user"></i>
-                        </div>
-                        <div className={`${styles.inputBox} ${styles.animation}`} style={{ '--i': 2, '--j': 23 }}>
-                            <input type="password" required />
-                            <label>Contraseña</label>
-                            <i className="bx bx-lock"></i>
-                        </div>
-                        <button
-                            type="button"
-                            className={`${styles.btn} ${styles.animation}`}
-                            style={{ '--i': 3, '--j': 24 }}
-                            onClick={() => router.push('/moduloEstudiantes')}
-                        >
-                            Ingresar
-                        </button>
-                        <div className={`${styles.logregLink} ${styles.animation}`} style={{ '--i': 4, '--j': 25 }}>
-                            <p>
-                                ¿No tienes cuenta?{' '}
-                                <a href="#" onClick={handleRegisterClick}>
-                                    Registrarse
-                                </a>
-                            </p>
-                        </div>
-                    </div>
+        <div className={`${styles.wrapper} ${isRegisterActive ? styles.active : ''}`}>
+            <span className={styles.bgAnimate}></span>
+            <span className={styles.bgAnimate2}></span>
+
+            {/* === FORMULARIO LOGIN === */}
+            <div className={`${styles.formBox} ${styles.login} ${isRegisterActive ? styles.hidden : ''}`}>
+            <h2 className={styles.animation} style={{ '--i': 0, '--j': 21 }}>BUMI</h2>
+            
+            <form onSubmit={handleLogin}>
+                <div className={`${styles.inputBox} ${styles.animation}`} style={{ '--i': 1, '--j': 22 }}>
+                <input 
+                    type="email" 
+                    required 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                />
+                <label>Email</label>
+                <i className="bx bx-user"></i>
                 </div>
 
-                <div className={`${styles.infoText} ${styles.login} ${isRegisterActive ? styles.hidden : ''}`}>
-                    <h2 className={styles.animation} style={{ '--i': 0, '--j': 20 }}>
-                        ¡Bienvenido!
-                    </h2>
-                    <img
-                        src="/image/graduadoICON.png"
-                        className={styles.animation}
-                        style={{ '--i': 1, '--j': 21 }}
-                        alt="Graduado"
-                    />
+                <div className={`${styles.inputBox} ${styles.animation}`} style={{ '--i': 2, '--j': 23 }}>
+                <input 
+                    type="password" 
+                    required 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                />
+                <label>Contraseña</label>
+                <i className="bx bx-lock"></i>
                 </div>
 
-                <div className={`${styles.formBox} ${styles.register} ${isRegisterActive ? '' : styles.hidden}`}>
-                    <h2 className={styles.animation} style={{ '--i': 17, '--j': 0 }}>
-                        Registro
-                    </h2>
-                    <div>
-                        <div className={`${styles.inputBox} ${styles.animation}`} style={{ '--i': 18, '--j': 1 }}>
-                            <input type="text" required />
-                            <label>Usuario</label>
-                            <i className="bx bx-user"></i>
-                        </div>
-                        <div className={`${styles.inputBox} ${styles.animation}`} style={{ '--i': 19, '--j': 2 }}>
-                            <input type="text" required />
-                            <label>Email</label>
-                            <i className="bx bx-envelope"></i>
-                        </div>
-                        <div className={`${styles.inputBox} ${styles.animation}`} style={{ '--i': 20, '--j': 3 }}>
-                            <input type="password" required />
-                            <label>Contraseña</label>
-                            <i className="bx bx-lock"></i>
-                        </div>
-                        <button type="button" className={`${styles.btn} ${styles.animation}`} style={{ '--i': 21, '--j': 4 }}>
-                            Registrarse
-                        </button>
-                        <div className={`${styles.logregLink} ${styles.animation}`} style={{ '--i': 22, '--j': 5 }}>
-                            <p>
-                                ¿Ya tienes cuenta?{' '}
-                                <a href="#" onClick={handleLoginClick}>
-                                    Ingresar
-                                </a>
-                            </p>
-                        </div>
-                    </div>
-                </div>
+                {error && <p style={{ color: 'red', fontSize: '14px', margin: '10px 0' }}>{error}</p>}
 
-                <div className={`${styles.infoText} ${styles.register} ${isRegisterActive ? '' : styles.hidden}`}>
-                    <h2 className={styles.animation} style={{ '--i': 17, '--j': 0 }}>
-                        BUMI
-                    </h2>
-                    <img
-                        src="/image/graduadoICON.png"
-                        className={styles.animation}
-                        style={{ '--i': 18, '--j': 1 }}
-                        alt="Graduado"
-                    />
-                </div>
+                <button
+                type="submit"
+                className={`${styles.btn} ${styles.animation}`}
+                style={{ '--i': 3, '--j': 24 }}
+                disabled={loading}
+                >
+                {loading ? 'Ingresando...' : 'Ingresar'}
+                </button>
+            </form>
+
+            <div className={`${styles.logregLink} ${styles.animation}`} style={{ '--i': 4, '--j': 25 }}>
+                <p>Sistema de Coordinadores</p>
+            </div>
+            </div>
+
+            {/* === TEXTO DECORATIVO === */}
+            <div className={`${styles.infoText} ${styles.login} ${isRegisterActive ? styles.hidden : ''}`}>
+            <h2 className={styles.animation} style={{ '--i': 0, '--j': 20 }}>
+                ¡Bienvenido!
+            </h2>
+            <img
+                src="/image/graduadoICON.png"
+                className={styles.animation}
+                style={{ '--i': 1, '--j': 21 }}
+                alt="Graduado"
+            />
             </div>
         </div>
+        </div>
     );
+    
 };
 
 export default Login;
-

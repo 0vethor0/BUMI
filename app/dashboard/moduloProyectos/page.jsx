@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '../../../lib/api';
 import styles from '../../styles/ModuloProyectos.module.css';
+import PDFUploader from '../../components/PDFUploader';
 
 const ModuloProyectos = () => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -11,6 +13,7 @@ const ModuloProyectos = () => {
     const [selectedRowId, setSelectedRowId] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+
     const [newRowData, setNewRowData] = useState({
         idproyecto: '',
         title: '',
@@ -18,7 +21,7 @@ const ModuloProyectos = () => {
         objectivesSpecific: '',
         type: '',
         summary: '',
-        pdf: null
+        pdfUrl: '' // <-- URL del PDF en Cloudflare R2
     });
 
     useEffect(() => {
@@ -35,15 +38,20 @@ const ModuloProyectos = () => {
                 objectivesSpecific: project.objetivos_especificos,
                 summary: project.resumen,
                 type: project.tipoInvestigacion,
-                authors: project.authors || 'TBD'
+                authors: project.authors || 'TBD',
+                pdfUrl: project.URL || ''
             }));
             setProjects(mappedProjects);
             setSelectedRowId(null);
-            console.log('Proyectos cargados:', mappedProjects);
         } catch (error) {
             console.error('Error al cargar proyectos:', error);
             alert('Error al cargar los proyectos');
         }
+    };
+
+    const handlePdfUploadSuccess = (publicUrl) => {
+        setNewRowData(prev => ({ ...prev, pdfUrl: publicUrl }));
+        alert('¡PDF subido exitosamente a Cloudflare R2!');
     };
 
     const handleSearchClick = async () => {
@@ -65,10 +73,10 @@ const ModuloProyectos = () => {
                     objectivesSpecific: project.objetivos_especificos,
                     summary: project.resumen,
                     type: project.tipoInvestigacion,
-                    authors: project.authors || 'TBD'
+                    authors: project.authors || 'TBD',
+                    pdfUrl: project.URL || ''
                 }));
                 setProjects(mappedProjects);
-                console.log('Resultados de búsqueda:', mappedProjects);
             }
             setSelectedRowId(null);
         } catch (error) {
@@ -88,21 +96,13 @@ const ModuloProyectos = () => {
 
     const handleProjectClick = (e, idproyecto) => {
         e.stopPropagation();
-        if (isEditing) {
-            console.log('Clic en proyecto ignorado: Modo edición activo');
-            return;
-        }
-        if (!idproyecto) {
-            console.error('ID de proyecto inválido:', idproyecto);
-            return;
-        }
+        if (isEditing) return;
         setSelectedRowId(idproyecto);
-        console.log('Proyecto clicado, ID:', idproyecto, 'Nuevo selectedRowId:', idproyecto);
     };
 
     const handleNewClick = () => {
         if (isEditing) {
-            alert('Por favor, guarda o cancela la edición actual antes de añadir un nuevo proyecto.');
+            alert('Termina o cancela la edición actual primero.');
             return;
         }
         setSelectedRowId('new-row');
@@ -114,138 +114,106 @@ const ModuloProyectos = () => {
             objectivesSpecific: '',
             type: '',
             summary: '',
-            pdf: null
+            pdfUrl: ''
         });
-        console.log('Nuevo proyecto iniciado, selectedRowId:', 'new-row', 'isEditing:', true);
     };
 
     const handleModifyClick = async () => {
-        console.log('Modificar clicado, selectedRowId:', selectedRowId, 'isEditing:', isEditing);
-        if (!selectedRowId && !isEditing) {
-            alert('Por favor, selecciona un proyecto para modificar.');
+        if (!isEditing) {
+            // Activar modo edición
+            if (!selectedRowId) {
+                alert('Selecciona un proyecto para modificar.');
+                return;
+            }
+            const project = projects.find(p => p.idproyecto === selectedRowId);
+            setIsEditing(true);
+            setNewRowData({
+                idproyecto: project.idproyecto,
+                title: project.title,
+                objectiveGeneral: project.objectiveGeneral || '',
+                objectivesSpecific: project.objectivesSpecific || '',
+                type: project.type,
+                summary: project.summary,
+                pdfUrl: project.pdfUrl || ''
+            });
             return;
         }
 
-        if (!isEditing) {
-            setIsEditing(true);
-            const projectToEdit = projects.find(project => project.idproyecto === selectedRowId);
-            if (projectToEdit) {
-                setNewRowData({
-                    idproyecto: projectToEdit.idproyecto,
-                    title: projectToEdit.title,
-                    objectiveGeneral: projectToEdit.objectiveGeneral || '',
-                    objectivesSpecific: projectToEdit.objectivesSpecific || '',
-                    type: projectToEdit.type,
-                    summary: projectToEdit.summary,
-                    pdf: projectToEdit.pdf || null
-                });
-                console.log('Editando proyecto:', projectToEdit);
+        // GUARDAR (nuevo o actualización)
+        const requiredFields = ['title', 'objectiveGeneral', 'objectivesSpecific', 'type', 'summary', 'pdfUrl'];
+        const missing = requiredFields.find(field => !newRowData[field]?.trim());
+        if (missing) {
+            alert('Todos los campos son obligatorios, incluyendo el PDF.');
+            return;
+        }
+
+        try {
+            const payload = {
+                Titulo: newRowData.title,
+                objetivo_general: newRowData.objectiveGeneral,
+                objetivos_especificos: newRowData.objectivesSpecific,
+                resumen: newRowData.summary,
+                tipoInvestigacion: newRowData.type,
+                URL: newRowData.pdfUrl
+            };
+
+            if (selectedRowId === 'new-row') {
+                await api.post('/crear_proyecto', payload);
+                alert('Proyecto creado con éxito');
             } else {
-                console.error('Proyecto para editar no encontrado para idproyecto:', selectedRowId);
-            }
-        } else {
-            const isEmpty = ['title', 'objectiveGeneral', 'objectivesSpecific', 'type', 'summary'].some(field => newRowData[field].toString().trim() === '');
-            if (isEmpty) {
-                alert('Todos los campos deben ser rellenados.');
-                return;
+                await api.put(`/actualizar_proyecto/${selectedRowId}`, payload);
+                alert('Proyecto actualizado con éxito');
             }
 
-            try {
-                const dataToSend = {
-                    Titulo: newRowData.title,
-                    objetivo_general: newRowData.objectiveGeneral,
-                    objetivos_especificos: newRowData.objectivesSpecific,
-                    resumen: newRowData.summary,
-                    tipoInvestigacion: newRowData.type
-                };
-                if (selectedRowId === 'new-row') {
-                    await api.post('/crear_proyecto', dataToSend);
-                } else {
-                    await api.put(`/actualizar_proyecto/${selectedRowId}`, dataToSend);
-                }
-                await fetchProjects();
-                setIsEditing(false);
-                setSelectedRowId(null);
-                setNewRowData({
-                    idproyecto: '',
-                    title: '',
-                    objectiveGeneral: '',
-                    objectivesSpecific: '',
-                    type: '',
-                    summary: '',
-                    pdf: null
-                });
-                alert('Cambios guardados exitosamente.');
-                console.log('Cambios guardados, estado reseteado');
-            } catch (error) {
-                console.error('Error al guardar proyecto:', error);
-                alert('Error al guardar los cambios');
-            }
+            await fetchProjects();
+            setIsEditing(false);
+            setSelectedRowId(null);
+            setNewRowData({ idproyecto: '', title: '', objectiveGeneral: '', objectivesSpecific: '', type: '', summary: '', pdfUrl: '' });
+        } catch (error) {
+            console.error('Error al guardar proyecto:', error);
+            alert('Error al guardar el proyecto');
         }
     };
 
-    const handleDeleteClick = async () => {
-        console.log('Eliminar clicado, selectedRowId:', selectedRowId, 'isEditing:', isEditing);
-        if (!selectedRowId && !isEditing) {
-            alert('Por favor, selecciona un proyecto para eliminar.');
-            return;
-        }
-
+    const handleDeleteClick = () => {
         if (isEditing) {
             setIsEditing(false);
             setSelectedRowId(null);
-            setNewRowData({
-                idproyecto: '',
-                title: '',
-                objectiveGeneral: '',
-                objectivesSpecific: '',
-                type: '',
-                summary: '',
-                pdf: null
-            });
-            alert('Edición cancelada.');
-            console.log('Edición cancelada, estado reseteado');
-        } else {
-            if (window.confirm('¿Estás seguro de que quieres eliminar el proyecto seleccionado?')) {
-                try {
-                    await api.delete(`/eliminar_proyecto/${selectedRowId}`);
-                    await fetchProjects();
+            setNewRowData({ idproyecto: '', title: '', objectiveGeneral: '', objectivesSpecific: '', type: '', summary: '', pdfUrl: '' });
+            return;
+        }
+
+        if (!selectedRowId) {
+            alert('Selecciona un proyecto para eliminar.');
+            return;
+        }
+
+        if (window.confirm('¿Estás seguro de eliminar este proyecto?')) {
+            api.delete(`/eliminar_proyecto/${selectedRowId}`)
+                .then(() => {
+                    fetchProjects();
                     setSelectedRowId(null);
-                    alert('Proyecto eliminado.');
-                    console.log('Proyecto eliminado, selectedRowId reseteado');
-                } catch (error) {
-                    console.error('Error al eliminar proyecto:', error);
-                    alert('Error al eliminar el proyecto');
-                }
-            }
+                    alert('Proyecto eliminado');
+                })
+                .catch(() => alert('Error al eliminar'));
         }
     };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setNewRowData({ ...newRowData, [name]: value });
+        setNewRowData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleFileChange = (e) => {
-        setNewRowData({ ...newRowData, pdf: e.target.files[0] });
-    };
+    const handleSearchChange = (e) => setSearchTerm(e.target.value);
 
-    const handleSearchChange = (e) => {
-        setSearchTerm(e.target.value);
-    };
-
-    const getButtonText = (buttonType) => {
-        if (isEditing) {
-            if (buttonType === 'modify') return 'Guardar';
-            if (buttonType === 'delete') return 'Cancelar';
-        }
-        if (buttonType === 'modify') return 'Modificar';
-        if (buttonType === 'delete') return 'Eliminar';
-        return '';
+    const getButtonText = (type) => {
+        if (isEditing) return type === 'modify' ? 'Guardar' : 'Cancelar';
+        return type === 'modify' ? 'Modificar' : 'Eliminar';
     };
 
     return (
         <div className={`${styles.container} ${sidebarCollapsed ? styles.collapsed : ''}`}>
+            {/* Sidebar */}
             <aside className={styles.sidebar}>
                 <div className={styles.sidebarHeader}>
                     <div className={styles.logo} onClick={toggleSidebar}><i className="fas fa-bars"></i></div>
@@ -277,28 +245,14 @@ const ModuloProyectos = () => {
                     </div>
                 </header>
 
+                {/* LISTADO DE PROYECTOS */}
                 {!isEditing && (
                     <div className={styles.card}>
                         <div className={styles.searchBar}>
                             <i className="fas fa-search"></i>
-                            <input 
-                                type="text" 
-                                placeholder="Buscar por título..." 
-                                value={searchTerm}
-                                onChange={handleSearchChange}
-                            />
-                            <button 
-                                className={`${styles.button} ${styles.buttonSecondary}`}
-                                onClick={handleSearchClick}
-                            >
-                                Buscar
-                            </button>
-                            <button 
-                                className={`${styles.button} ${styles.buttonSecondary}`}
-                                onClick={handleResetSearch}
-                            >
-                                Restablecer
-                            </button>
+                            <input type="text" placeholder="Buscar por título..." value={searchTerm} onChange={handleSearchChange} />
+                            <button className={`${styles.button} ${styles.buttonSecondary}`} onClick={handleSearchClick}>Buscar</button>
+                            <button className={`${styles.button} ${styles.buttonSecondary}`} onClick={handleResetSearch}>Restablecer</button>
                         </div>
 
                         <div className={styles.projectList}>
@@ -307,10 +261,14 @@ const ModuloProyectos = () => {
                                     key={project.idproyecto}
                                     className={`${styles.projectItem} ${selectedRowId === project.idproyecto ? styles.selected : ''}`}
                                     onClick={(e) => handleProjectClick(e, project.idproyecto)}
-                                    style={{ cursor: isEditing ? 'not-allowed' : 'pointer' }}
                                 >
                                     <div className={styles.projectContent}>
-                                        <strong>{project.title}</strong> <a href="#">VER PDF</a>
+                                        <strong>{project.title}</strong>{' '}
+                                        {project.pdfUrl && (
+                                            <a href={project.pdfUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline text-sm">
+                                                VER PDF
+                                            </a>
+                                        )}
                                         <p>{project.summary}</p>
                                         <span className={styles.filter}>Filtro por: {project.type}</span>
                                         <p>{project.authors}</p>
@@ -320,110 +278,71 @@ const ModuloProyectos = () => {
                         </div>
 
                         <div className={styles.actions}>
-                            <button 
-                                className={`${styles.button} ${styles.buttonSecondary}`} 
-                                onClick={handleNewClick} 
-                                disabled={isEditing}
-                            >
-                                Nuevo
-                            </button>
-                            <button 
-                                className={`${styles.button} ${styles.buttonOutline}`} 
-                                onClick={handleModifyClick}
-                                disabled={!selectedRowId && !isEditing}
-                            >
+                            <button className={`${styles.button} ${styles.buttonSecondary}`} onClick={handleNewClick} disabled={isEditing}>Nuevo</button>
+                            <button className={`${styles.button} ${styles.buttonOutline}`} onClick={handleModifyClick}>
                                 {getButtonText('modify')}
                             </button>
-                            <button 
-                                className={`${styles.button} ${styles.buttonDanger}`} 
-                                onClick={handleDeleteClick}
-                                disabled={!selectedRowId && !isEditing}
-                            >
+                            <button className={`${styles.button} ${styles.buttonDanger}`} onClick={handleDeleteClick}>
                                 {getButtonText('delete')}
                             </button>
                         </div>
                     </div>
                 )}
 
+                {/* FORMULARIO DE EDICIÓN / CREACIÓN */}
                 {isEditing && (
                     <div className={styles.fullScreenForm}>
                         <header className={styles.header}>
                             <h1>{selectedRowId === 'new-row' ? 'Registro de Nuevo Proyecto' : 'Modificar Proyecto'}</h1>
-                            <div className={styles.headerIcons}>
-                                <button 
-                                    className={styles.iconButton} 
-                                    onClick={handleDeleteClick}
-                                >
-                                    <i className="fas fa-times"></i>
-                                </button>
-                            </div>
+                            <button className={styles.iconButton} onClick={handleDeleteClick}>
+                                <i className="fas fa-times"></i>
+                            </button>
                         </header>
+
                         <div className={styles.formCard}>
                             <div className={styles.formContainer}>
                                 <div className={styles.formColumn}>
                                     <div className={styles.formGroup}>
                                         <label>Título</label>
-                                        <input 
-                                            type="text" 
-                                            name="title" 
-                                            value={newRowData.title} 
-                                            onChange={handleInputChange} 
-                                            placeholder="Ingrese el Título del Proyecto:" 
-                                        />
+                                        <input type="text" name="title" value={newRowData.title} onChange={handleInputChange} placeholder="Ingrese el Título del Proyecto" />
                                     </div>
                                     <div className={styles.formGroup}>
                                         <label>Objetivo General</label>
-                                        <input 
-                                            type="text" 
-                                            name="objectiveGeneral" 
-                                            value={newRowData.objectiveGeneral} 
-                                            onChange={handleInputChange} 
-                                            placeholder="Ingrese el Objetivo General del Proyecto:" 
-                                        />
+                                        <input type="text" name="objectiveGeneral" value={newRowData.objectiveGeneral} onChange={handleInputChange} placeholder="Ingrese el Objetivo General" />
                                     </div>
                                     <div className={styles.formGroup}>
                                         <label>Objetivos Específicos</label>
-                                        <textarea 
-                                            name="objectivesSpecific" 
-                                            value={newRowData.objectivesSpecific} 
-                                            onChange={handleInputChange} 
-                                            placeholder="Ingrese y enumere los objetivos específicos que desea guardar:" 
-                                        />
+                                        <textarea name="objectivesSpecific" value={newRowData.objectivesSpecific} onChange={handleInputChange} rows="6" placeholder="Enumere los objetivos específicos..." />
                                     </div>
                                 </div>
+
                                 <div className={styles.formColumn}>
                                     <div className={styles.formGroup}>
                                         <label>Tipo de Investigación</label>
-                                        <input 
-                                            type="text" 
-                                            name="type" 
-                                            value={newRowData.type} 
-                                            onChange={handleInputChange} 
-                                            placeholder="Ingrese el tipo de investigación. Ej: Cuantitativo" 
-                                        />
+                                        <input type="text" name="type" value={newRowData.type} onChange={handleInputChange} placeholder="Ej: Cuantitativo, Cualitativo..." />
                                     </div>
                                     <div className={styles.formGroup}>
                                         <label>Resumen</label>
-                                        <textarea 
-                                            name="summary" 
-                                            value={newRowData.summary} 
-                                            onChange={handleInputChange} 
-                                            placeholder="Ingrese el resumen de la investigación:" 
-                                        />
+                                        <textarea name="summary" value={newRowData.summary} onChange={handleInputChange} rows="6" placeholder="Resumen del proyecto..." />
                                     </div>
+
                                     <div className={styles.formGroup}>
-                                        <label>Adjuntar Documento en PDF</label>
-                                        <div className={`${styles.fileInputContainer} ${newRowData.pdf ? styles.fileSelected : ''}`}>
-                                            <input id="fileInput" type="file" accept="application/pdf" onChange={handleFileChange} />
-                                            <button className={styles.uploadButton}>Subir</button>
-                                        </div>
+                                        <label>Documento PDF (Obligatorio)</label>
+                                        <PDFUploader onUploadSuccess={handlePdfUploadSuccess} />
+
+                                        {newRowData.pdfUrl && (
+                                            <div className="mt-4 p-4 bg-green-50 border border-green-300 rounded">
+                                                <p className="text-green-800 font-medium">PDF subido correctamente</p>
+                                                <a href={newRowData.pdfUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline text-sm">
+                                                    Abrir PDF en nueva pestaña
+                                                </a>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
-                            <button 
-                                className={styles.saveButton} 
-                                onClick={handleModifyClick}
-                            >
+
+                            <button className={styles.saveButton} onClick={handleModifyClick}>
                                 {getButtonText('modify')}
                             </button>
                         </div>
@@ -435,4 +354,3 @@ const ModuloProyectos = () => {
 };
 
 export default ModuloProyectos;
-
