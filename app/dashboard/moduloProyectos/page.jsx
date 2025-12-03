@@ -222,8 +222,8 @@ const ModuloProyectos = () => {
                 <nav className={styles.sidebarNav}>
                     <ul>
                         <li><a href="#"><i className="fas fa-chart-line"></i> <span>Dashboard</span></a></li>
-                        <li><Link href="/moduloTutores"><i className="fas fa-chalkboard-teacher"></i> <span>Tutores</span></Link></li>
-                        <li><Link href="/moduloEstudiantes"><i className="fas fa-user-graduate"></i> <span>Estudiantes</span></Link></li>
+                        <li><Link href="/dashboard/moduloTutores"><i className="fas fa-chalkboard-teacher"></i> <span>Tutores</span></Link></li>
+                        <li><Link href="/dashboard/moduloEstudiantes"><i className="fas fa-user-graduate"></i> <span>Estudiantes</span></Link></li>
                         <li><a href="#"><i className="fas fa-users"></i> <span>Grupos</span></a></li>
                         <li className={styles.active}><a href="#"><i className="fas fa-project-diagram"></i> <span>Proyectos</span></a></li>
                         <li><a href="#"><i className="fas fa-clipboard-list"></i> <span>Estado de Proyecto</span></a></li>
