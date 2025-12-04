@@ -1,6 +1,4 @@
 
-@import "tw-animate-css";
-
 @plugin "tailwindcss-animate";
 
 @custom-variant dark (&:is(.dark *));
@@ -666,4 +664,3 @@ section h2 {
     @apply bg-background text-foreground;
     }
 }
-

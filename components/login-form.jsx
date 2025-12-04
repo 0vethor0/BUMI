@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { createClient } from '@/lib/client'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -38,7 +38,7 @@ export function LoginForm({
         password,
       })
       if (error) throw error
-      // Update this route to redirect to an authenticated route. The user already has an active session.
+      // Redirigir a una ruta autenticada. El usuario ya tiene una sesión activa.
       router.push('/protected')
     } catch (error) {
       setError(error instanceof Error ? error.message : 'An error occurred')
