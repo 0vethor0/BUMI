@@ -1,3 +1,6 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 /* Generales y Resets */
 :root {
     --primary-color: #28a79a; /* Verde azulado principal (se mantiene) */
