@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import api from '../../../lib/api';
+import api from '../../../../lib/api';
 import styles from '../../styles/ModuloEstudiantes.module.css';
 import { useRouter } from 'next/navigation';
 
@@ -269,10 +269,10 @@ const ModuloEstudiantes = () => {
                 <nav className={styles.sidebarNav}>
                     <ul>
                         <li><a href="#"><i className="fas fa-chart-line"></i> <span>Dashboard</span></a></li>
-                        <li><Link href="/dashboard/moduloTutores"><i className="fas fa-chalkboard-teacher"></i> <span>Tutores</span></Link></li>
+                        <li><Link href="../../dashboard/moduloTutores/page.jsx"><i className="fas fa-chalkboard-teacher"></i> <span>Tutores</span></Link></li>
                         <li className={styles.active}><a href="#"><i className="fas fa-user-graduate"></i> <span>Estudiantes</span></a></li>
                         <li><a href="#"><i className="fas fa-users"></i> <span>Grupos</span></a></li>
-                        <li><Link href="/dashboard/moduloProyectos"><i className="fas fa-project-diagram"></i> <span>Proyectos</span></Link></li>
+                        <li><Link href="../../dashboard/moduloProyectos/page.jsx"><i className="fas fa-project-diagram"></i> <span>Proyectos</span></Link></li>
                         <li><a href="#"><i className="fas fa-clipboard-list"></i> <span>Estado de Proyecto</span></a></li>
                     </ul>
                     <ul className={styles.logout}>

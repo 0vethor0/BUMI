@@ -19,6 +19,9 @@ const PaginaPrincipal = () => {
                                 <a href="#">Manual de usuario</a>
                             </li>
                             <li>
+                                <a href="#">Noticias</a>
+                            </li>
+                            <li>
                                 <a href="#">Contacto</a>
                             </li>
                             <li>

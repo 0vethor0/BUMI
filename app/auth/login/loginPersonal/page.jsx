@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import styles from '../app/styles/Login.module.css';
+import styles from '../../../styles/Login.module.css';
 
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -32,7 +32,7 @@ export function LoginForm({}) {
         })
         if (error) throw error
         // Redirigir a una ruta autenticada. El usuario ya tiene una sesión activa.
-        router.push('/protected/dashboard/moduloProyectos');
+        router.push('/protected')
         } catch (error) {
         setError(error instanceof Error ? error.message : 'An error occurred')
         } finally {
@@ -82,6 +82,7 @@ export function LoginForm({}) {
                 <input 
                     id='email'
                     type="email"
+                    placeholder="m@gmail.com" 
                     required 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -102,9 +103,16 @@ export function LoginForm({}) {
                 <Link
                     href="/auth/forgot-password"
                     className="ml-auto inline-block text-sm underline-offset-4 hover:underline">
-                    Olvidaste tu contraseña?
+                    Forgot your password?
                 </Link>
                 <i className="bx bx-lock"></i>
+
+                {/* <div className="mt-4 text-center text-sm">
+                    Don&apos;t have an account?{' '}
+                    <Link href="/auth/sign-up" className="underline underline-offset-4">
+                        Sign up
+                    </Link>
+                </div> */}
                 
                 </div>
 
