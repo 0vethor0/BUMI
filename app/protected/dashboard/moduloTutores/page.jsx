@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import api from '../../../lib/api';
+import api from '../../../../lib/api';
 import styles from '../../styles/ModuloTutores.module.css';
 
 const ModuloTutores = () => {
@@ -308,9 +308,9 @@ const ModuloTutores = () => {
                     <ul>
                         <li><a href="#"><i className="fas fa-chart-line"></i> <span>Dashboard</span></a></li>
                         <li className={styles.active}><a href="#"><i className="fas fa-chalkboard-teacher"></i> <span>Tutores</span></a></li>
-                        <li><Link href="/moduloEstudiantes"><i className="fas fa-user-graduate"></i> <span>Estudiantes</span></Link></li>
+                        <li><Link href="../moduloEstudiantes/page.jsx"><i className="fas fa-user-graduate"></i> <span>Estudiantes</span></Link></li>
                         <li><a href="#"><i className="fas fa-users"></i> <span>Grupos</span></a></li>
-                        <li><Link href="/moduloProyectos"><i className="fas fa-project-diagram"></i> <span>Proyectos</span></Link></li>
+                        <li><Link href="../moduloProyectos/page.jsx"><i className="fas fa-project-diagram"></i> <span>Proyectos</span></Link></li>
                         <li><a href="#"><i className="fas fa-clipboard-list"></i> <span>Estado de Proyecto</span></a></li>
                     </ul>
                     <ul className={styles.logout}>
