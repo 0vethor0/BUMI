@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import api from '../../lib/api';
+import { createClient } from '@/lib/supabase/client';
 import styles from '../styles/BuscadorPrincipal.module.css';
 
 const BuscadorPrincipal = () => {
@@ -10,19 +10,21 @@ const BuscadorPrincipal = () => {
     const [projects, setProjects] = useState([]);
     const [showMoreYears, setShowMoreYears] = useState(false);
 
-    useEffect(() => {
-        fetchProjects();
-    }, []);
-
-    const fetchProjects = async () => {
+    const fetchProjects = useCallback(async () => {
+        const supabase = createClient();
         try {
-            const response = await api.get('/consultar_todos_los_proyectos/');
-            const mappedProjects = response.data.map(project => ({
-                idproyecto: project.idproyecto,
-                title: project.Titulo,
-                objectiveGeneral: project.objetivo_general,
+            const { data, error } = await supabase
+                .from('tbproyecto')
+                .select('*');
+            
+            if (error) throw error;
+
+            const mappedProjects = data.map(project => ({
+                idproyecto: project.id,
+                title: project.titulo,
+                objectiveGeneral: project.obj_general,
                 summary: project.resumen,
-                type: project.tipoInvestigacion
+                type: project.tipo_investigacion
             }));
             setProjects(mappedProjects);
             console.log('Proyectos cargados:', mappedProjects);
@@ -30,7 +32,11 @@ const BuscadorPrincipal = () => {
             console.error('Error al cargar proyectos:', error);
             alert('Error al cargar los proyectos');
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        fetchProjects();
+    }, [fetchProjects]);
 
     const handleSearchClick = async () => {
         if (!searchTerm.trim()) {
@@ -38,18 +44,25 @@ const BuscadorPrincipal = () => {
             setProjects([]);
             return;
         }
+        const supabase = createClient();
         try {
-            const response = await api.get(`/buscar_proyecto_titulo?busqueda=${searchTerm}`);
-            if (response.data.message === 'No se encontraron proyectos con ese título') {
+            const { data, error } = await supabase
+                .from('tbproyecto')
+                .select('*')
+                .ilike('titulo', `%${searchTerm}%`);
+
+            if (error) throw error;
+
+            if (data.length === 0) {
                 alert('No se encontró un proyecto con ese título.');
                 setProjects([]);
             } else {
-                const mappedProjects = response.data.map(project => ({
-                    idproyecto: project.idproyecto,
-                    title: project.Titulo,
-                    objectiveGeneral: project.objetivo_general,
+                const mappedProjects = data.map(project => ({
+                    idproyecto: project.id,
+                    title: project.titulo,
+                    objectiveGeneral: project.obj_general,
                     summary: project.resumen,
-                    type: project.tipoInvestigacion
+                    type: project.tipo_investigacion
                 }));
                 setProjects(mappedProjects);
                 console.log('Resultados de búsqueda:', mappedProjects);

@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import api from '../../../../lib/api';
+import { createClient } from '@/lib/supabase/client';
 import styles from '../../../styles/ModuloProyectos.module.css';
 import PDFUploader from '../../../../components/logica_PDFdownload/PDFUploader';
 import LogoutButton from '@/components/logout-button';
@@ -14,6 +14,7 @@ const ModuloProyectos = () => {
     const [selectedRowId, setSelectedRowId] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [areasInvestigacion, setAreasInvestigacion] = useState([]);
 
     const [newRowData, setNewRowData] = useState({
         idproyecto: '',
@@ -22,25 +23,40 @@ const ModuloProyectos = () => {
         objectivesSpecific: '',
         type: '',
         summary: '',
-        pdfUrl: '' // <-- URL del PDF en Cloudflare R2
+        pdfUrl: '', // <-- URL del PDF en Cloudflare R2
+        id_area_investigacion: ''
     });
 
-    useEffect(() => {
-        fetchProjects();
+    const fetchAreas = useCallback(async () => {
+        const supabase = createClient();
+        try {
+            const { data, error } = await supabase.from('tbareainvestigacion').select('*');
+            if (error) throw error;
+            setAreasInvestigacion(data);
+        } catch (error) {
+            console.error('Error fetching areas:', error);
+        }
     }, []);
 
-    const fetchProjects = async () => {
+    const fetchProjects = useCallback(async () => {
+        const supabase = createClient();
         try {
-            const response = await api.get('/consultar_todos_los_proyectos/');
-            const mappedProjects = response.data.map(project => ({
-                idproyecto: project.idproyecto,
-                title: project.Titulo,
-                objectiveGeneral: project.objetivo_general,
+            const { data, error } = await supabase
+                .from('tbproyecto')
+                .select('*');
+            
+            if (error) throw error;
+
+            const mappedProjects = data.map(project => ({
+                idproyecto: project.id,
+                title: project.titulo,
+                objectiveGeneral: project.obj_general,
                 objectivesSpecific: project.objetivos_especificos,
                 summary: project.resumen,
-                type: project.tipoInvestigacion,
+                type: project.tipo_investigacion,
                 authors: project.authors || 'TBD',
-                pdfUrl: project.URL || ''
+                pdfUrl: project.pdf_Url || '',
+                id_area_investigacion: project.id_area_investigacion
             }));
             setProjects(mappedProjects);
             setSelectedRowId(null);
@@ -48,7 +64,12 @@ const ModuloProyectos = () => {
             console.error('Error al cargar proyectos:', error);
             alert('Error al cargar los proyectos');
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        fetchProjects();
+        fetchAreas();
+    }, [fetchProjects, fetchAreas]);
 
     const handlePdfUploadSuccess = (publicUrl) => {
         setNewRowData(prev => ({ ...prev, pdfUrl: publicUrl }));
@@ -61,21 +82,28 @@ const ModuloProyectos = () => {
             setProjects([]);
             return;
         }
+        const supabase = createClient();
         try {
-            const response = await api.get(`/buscar_proyecto_titulo?busqueda=${searchTerm}`);
-            if (response.data.message === 'No se encontraron proyectos con ese título') {
+            const { data, error } = await supabase
+                .from('tbproyecto')
+                .select('*')
+                .ilike('titulo', `%${searchTerm}%`);
+
+            if (error) throw error;
+
+            if (data.length === 0) {
                 alert('No se encontró un proyecto con ese título.');
                 setProjects([]);
             } else {
-                const mappedProjects = response.data.map(project => ({
-                    idproyecto: project.idproyecto,
-                    title: project.Titulo,
-                    objectiveGeneral: project.objetivo_general,
+                const mappedProjects = data.map(project => ({
+                    idproyecto: project.id,
+                    title: project.titulo,
+                    objectiveGeneral: project.obj_general,
                     objectivesSpecific: project.objetivos_especificos,
                     summary: project.resumen,
-                    type: project.tipoInvestigacion,
+                    type: project.tipo_investigacion,
                     authors: project.authors || 'TBD',
-                    pdfUrl: project.URL || ''
+                    pdfUrl: project.pdf_Url || ''
                 }));
                 setProjects(mappedProjects);
             }
@@ -115,7 +143,8 @@ const ModuloProyectos = () => {
             objectivesSpecific: '',
             type: '',
             summary: '',
-            pdfUrl: ''
+            pdfUrl: '',
+            id_area_investigacion: ''
         });
     };
 
@@ -135,52 +164,63 @@ const ModuloProyectos = () => {
                 objectivesSpecific: project.objectivesSpecific || '',
                 type: project.type,
                 summary: project.summary,
-                pdfUrl: project.pdfUrl || ''
+                pdfUrl: project.pdfUrl || '',
+                id_area_investigacion: project.id_area_investigacion || ''
             });
             return;
         }
 
         // GUARDAR (nuevo o actualización)
-        const requiredFields = ['title', 'objectiveGeneral', 'objectivesSpecific', 'type', 'summary', 'pdfUrl'];
-        const missing = requiredFields.find(field => !newRowData[field]?.trim());
+        const requiredFields = ['title', 'objectiveGeneral', 'objectivesSpecific', 'type', 'summary', 'pdfUrl', 'id_area_investigacion'];
+        const missing = requiredFields.find(field => !newRowData[field]?.toString().trim());
         if (missing) {
-            alert('Todos los campos son obligatorios, incluyendo el PDF.');
+            alert('Todos los campos son obligatorios, incluyendo el PDF y el Área de Investigación.');
             return;
         }
 
+        const supabase = createClient();
+
         try {
             const payload = {
-                Titulo: newRowData.title,
-                objetivo_general: newRowData.objectiveGeneral,
+                titulo: newRowData.title,
+                obj_general: newRowData.objectiveGeneral,
                 objetivos_especificos: newRowData.objectivesSpecific,
                 resumen: newRowData.summary,
-                tipoInvestigacion: newRowData.type,
-                URL: newRowData.pdfUrl
+                tipo_investigacion: newRowData.type,
+                pdf_Url: newRowData.pdfUrl,
+                id_area_investigacion: parseInt(newRowData.id_area_investigacion)
             };
 
             if (selectedRowId === 'new-row') {
-                await api.post('/crear_proyecto', payload);
+                const { error } = await supabase
+                    .from('tbproyecto')
+                    .insert([payload]);
+                if (error) throw error;
                 alert('Proyecto creado con éxito');
             } else {
-                await api.put(`/actualizar_proyecto/${selectedRowId}`, payload);
+                const { error } = await supabase
+                    .from('tbproyecto')
+                    .update(payload)
+                    .eq('id', selectedRowId);
+                if (error) throw error;
                 alert('Proyecto actualizado con éxito');
             }
 
             await fetchProjects();
             setIsEditing(false);
             setSelectedRowId(null);
-            setNewRowData({ idproyecto: '', title: '', objectiveGeneral: '', objectivesSpecific: '', type: '', summary: '', pdfUrl: '' });
+            setNewRowData({ idproyecto: '', title: '', objectiveGeneral: '', objectivesSpecific: '', type: '', summary: '', pdfUrl: '', id_area_investigacion: '' });
         } catch (error) {
             console.error('Error al guardar proyecto:', error);
-            alert('Error al guardar el proyecto');
+            alert('Error al guardar el proyecto: ' + error.message);
         }
     };
 
-    const handleDeleteClick = () => {
+    const handleDeleteClick = async () => {
         if (isEditing) {
             setIsEditing(false);
             setSelectedRowId(null);
-            setNewRowData({ idproyecto: '', title: '', objectiveGeneral: '', objectivesSpecific: '', type: '', summary: '', pdfUrl: '' });
+            setNewRowData({ idproyecto: '', title: '', objectiveGeneral: '', objectivesSpecific: '', type: '', summary: '', pdfUrl: '', id_area_investigacion: '' });
             return;
         }
 
@@ -190,13 +230,22 @@ const ModuloProyectos = () => {
         }
 
         if (window.confirm('¿Estás seguro de eliminar este proyecto?')) {
-            api.delete(`/eliminar_proyecto/${selectedRowId}`)
-                .then(() => {
-                    fetchProjects();
-                    setSelectedRowId(null);
-                    alert('Proyecto eliminado');
-                })
-                .catch(() => alert('Error al eliminar'));
+            const supabase = createClient();
+            try {
+                const { error } = await supabase
+                    .from('tbproyecto')
+                    .delete()
+                    .eq('id', selectedRowId);
+                
+                if (error) throw error;
+
+                fetchProjects();
+                setSelectedRowId(null);
+                alert('Proyecto eliminado');
+            } catch (error) {
+                console.error('Error al eliminar:', error);
+                alert('Error al eliminar');
+            }
         }
     };
 
@@ -223,8 +272,8 @@ const ModuloProyectos = () => {
                 <nav className={styles.sidebarNav}>
                     <ul>
                         <li><a href="#"><i className="fas fa-chart-line"></i> <span>Dashboard</span></a></li>
-                        <li><Link href="../../dashboard/moduloTutores/page.jsx"><i className="fas fa-chalkboard-teacher"></i> <span>Tutores</span></Link></li>
-                        <li><Link href="../../dashboard/moduloEstudiantes/page.jsx"><i className="fas fa-user-graduate"></i> <span>Estudiantes</span></Link></li>
+                        <li><Link href="/protected/dashboard/moduloTutores"><i className="fas fa-chalkboard-teacher"></i> <span>Tutores</span></Link></li>
+                        <li><Link href="/protected/dashboard/moduloEstudiantes"><i className="fas fa-user-graduate"></i> <span>Estudiantes</span></Link></li>
                         <li><a href="#"><i className="fas fa-users"></i> <span>Grupos</span></a></li>
                         <li className={styles.active}><a href="#"><i className="fas fa-project-diagram"></i> <span>Proyectos</span></a></li>
                         <li><a href="#"><i className="fas fa-clipboard-list"></i> <span>Estado de Proyecto</span></a></li>
@@ -324,6 +373,21 @@ const ModuloProyectos = () => {
                                     <div className={styles.formGroup}>
                                         <label>Tipo de Investigación</label>
                                         <input type="text" name="type" value={newRowData.type} onChange={handleInputChange} placeholder="Ej: Cuantitativo, Cualitativo..." />
+                                    </div>
+                                    <div className={styles.formGroup}>
+                                        <label>Área de Investigación</label>
+                                        <select
+                                            className="form-select"
+                                            name="id_area_investigacion"
+                                            value={newRowData.id_area_investigacion}
+                                            onChange={handleInputChange}
+                                            style={{ width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid #ccc' }}
+                                        >
+                                            <option value="">Seleccione Área</option>
+                                            {areasInvestigacion.map(area => (
+                                                <option key={area.id} value={area.id}>{area.nombre}</option>
+                                            ))}
+                                        </select>
                                     </div>
                                     <div className={styles.formGroup}>
                                         <label>Resumen</label>

@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import api from '../../../../lib/api';
+import { createClient } from '@/lib/supabase/client';
 import styles from '../../styles/ModuloEstudiantes.module.css';
 import { useRouter } from 'next/navigation';
 
@@ -13,88 +13,95 @@ const ModuloEstudiantes = () => {
     const [selectedRowId, setSelectedRowId] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
     const [newRowData, setNewRowData] = useState({
-        cedulaEstudiante: '',
-        '1er_nombre': '',
-        '2do_nombre': '',
-        '1er_ape': '',
-        '2do_ape': '',
-        idcarrera: '',
-        cedulaTutor: ''
+        carnet: '',
+        nombre: '',
+        apellido1: '',
+        apellido2: '',
+        id_carrera: '',
+        // cedulaTutor removed as it is not in the schema
     });
     const [searchTerm, setSearchTerm] = useState('');
-    const [tutors, setTutors] = useState([]);
+    const [careers, setCareers] = useState([]);
 
-    const careerOptions = ['Turismo', 'TSU ADS', 'Ing Agroindustrial', 'Ing en Sistemas', 'Ing Civil', 'Ing Mecanica', 'Enfermeria'];
-    const careerIdMap = {
-        'Turismo': 9,
-        'TSU ADS': 11,
-        'Ing Agroindustrial': 12,
-        'Ing en Sistemas': 13,
-        'Ing Civil': 14,
-        'Ing Mecanica': 15,
-        'Enfermeria': 16
-    };
-
-    useEffect(() => {
-        fetchStudents();
-        fetchTutors();
-    }, []);
-
-    const fetchStudents = async () => {
+    const fetchStudents = useCallback(async () => {
+        const supabase = createClient();
         try {
-            const response = await api.get('/consultar_todos_los_estudiantes/');
-            const mappedStudents = response.data.map(student => ({
-                cedula: student.cedulaEstudiante,
-                firstName: student['1er_nombre'],
-                secondName: student['2do_nombre'],
-                lastName: student['1er_ape'],
-                secondLastName: student['2do_ape'],
-                career: Object.keys(careerIdMap).find(key => careerIdMap[key] === student.idcarrera) || '',
-                cedulaTutor: student.cedulaTutor
+            const { data, error } = await supabase
+                .from('tbestudiante')
+                .select(`
+                    *,
+                    tbcarrera (
+                        nombre
+                    )
+                `);
+            
+            if (error) throw error;
+
+            const mappedStudents = data.map(student => ({
+                id: student.id,
+                cedula: student.carnet,
+                firstName: student.nombre, // Assuming nombre stores the full first name or just one name
+                lastName: student.apellido1,
+                secondLastName: student.apellido2,
+                career: student.tbcarrera?.nombre || '',
+                id_carrera: student.id_carrera
             }));
             setStudents(mappedStudents);
             setSelectedRowId(null);
-            console.log('Estudiantes cargados:', mappedStudents);
         } catch (error) {
             console.error('Error al cargar estudiantes:', error);
             alert('Error al cargar los estudiantes');
         }
-    };
+    }, []);
 
-    const fetchTutors = async () => {
+    const fetchCareers = useCallback(async () => {
+        const supabase = createClient();
         try {
-            const response = await api.get('/consultar_datosBasicos_tutor/');
-            setTutors(response.data);
-            console.log('Tutores cargados:', response.data);
+            const { data, error } = await supabase
+                .from('tbcarrera')
+                .select('*');
+            
+            if (error) throw error;
+            setCareers(data);
         } catch (error) {
-            console.error('Error al cargar tutores:', error);
-            alert('Error al cargar los tutores');
+            console.error('Error al cargar carreras:', error);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        fetchStudents();
+        fetchCareers();
+    }, [fetchStudents, fetchCareers]);
 
     const handleSearchClick = async () => {
         if (!searchTerm.trim()) {
-            alert('Por favor, ingrese una cédula o nombre para buscar.');
+            fetchStudents();
             return;
         }
+        const supabase = createClient();
         try {
-            const response = await api.get(`/buscar_estudiante?busqueda=${searchTerm}`);
-            if (response.data.message === 'No se encontraron estudiantes con esa búsqueda') {
-                alert('No se encontró un estudiante con esa cédula o nombre.');
-                setStudents([]);
-            } else {
-                const mappedStudents = response.data.map(student => ({
-                    cedula: student.cedulaEstudiante,
-                    firstName: student['1er_nombre'],
-                    secondName: student['2do_nombre'],
-                    lastName: student['1er_ape'],
-                    secondLastName: student['2do_ape'],
-                    career: Object.keys(careerIdMap).find(key => careerIdMap[key] === student.idcarrera) || '',
-                    cedulaTutor: student.cedulaTutor
-                }));
-                setStudents(mappedStudents);
-                console.log('Resultados de búsqueda:', mappedStudents);
-            }
+            const { data, error } = await supabase
+                .from('tbestudiante')
+                .select(`
+                    *,
+                    tbcarrera (
+                        nombre
+                    )
+                `)
+                .or(`carnet.ilike.%${searchTerm}%,nombre.ilike.%${searchTerm}%,apellido1.ilike.%${searchTerm}%`);
+
+            if (error) throw error;
+
+            const mappedStudents = data.map(student => ({
+                id: student.id,
+                cedula: student.carnet,
+                firstName: student.nombre,
+                lastName: student.apellido1,
+                secondLastName: student.apellido2,
+                career: student.tbcarrera?.nombre || '',
+                id_carrera: student.id_carrera
+            }));
+            setStudents(mappedStudents);
             setSelectedRowId(null);
         } catch (error) {
             console.error('Error al buscar estudiantes:', error);
@@ -111,18 +118,10 @@ const ModuloEstudiantes = () => {
         setSidebarCollapsed(!sidebarCollapsed);
     };
 
-    const handleRowClick = (e, cedula) => {
+    const handleRowClick = (e, studentId) => {
         e.stopPropagation();
-        if (isEditing) {
-            console.log('Clic en fila ignorado: Modo edición activo');
-            return;
-        }
-        if (!cedula) {
-            console.error('Cédula de estudiante inválida:', cedula);
-            return;
-        }
-        setSelectedRowId(cedula);
-        console.log('Fila clicada, Cédula:', cedula, 'Nuevo selectedRowId:', cedula);
+        if (isEditing) return;
+        setSelectedRowId(studentId);
     };
 
     const handleNewClick = () => {
@@ -133,77 +132,75 @@ const ModuloEstudiantes = () => {
         setSelectedRowId('new-row');
         setIsEditing(true);
         setNewRowData({
-            cedulaEstudiante: '',
-            '1er_nombre': '',
-            '2do_nombre': '',
-            '1er_ape': '',
-            '2do_ape': '',
-            idcarrera: '',
-            cedulaTutor: ''
+            carnet: '',
+            nombre: '',
+            apellido1: '',
+            apellido2: '',
+            id_carrera: ''
         });
-        console.log('Nueva fila iniciada, selectedRowId:', 'new-row', 'isEditing:', true);
     };
 
     const handleModifyClick = async () => {
-        console.log('Modificar clicado, selectedRowId:', selectedRowId, 'isEditing:', isEditing);
         if (!selectedRowId && !isEditing) {
             alert('Por favor, selecciona una fila para modificar.');
             return;
         }
 
+        const supabase = createClient();
+
         if (!isEditing) {
             setIsEditing(true);
-            const rowToEdit = students.find(student => student.cedula === selectedRowId);
+            const rowToEdit = students.find(student => student.id === selectedRowId);
             if (rowToEdit) {
                 setNewRowData({
-                    cedulaEstudiante: rowToEdit.cedula,
-                    '1er_nombre': rowToEdit.firstName,
-                    '2do_nombre': rowToEdit.secondName,
-                    '1er_ape': rowToEdit.lastName,
-                    '2do_ape': rowToEdit.secondLastName,
-                    idcarrera: careerIdMap[rowToEdit.career] || '',
-                    cedulaTutor: rowToEdit.cedulaTutor
+                    carnet: rowToEdit.cedula,
+                    nombre: rowToEdit.firstName,
+                    apellido1: rowToEdit.lastName,
+                    apellido2: rowToEdit.secondLastName,
+                    id_carrera: rowToEdit.id_carrera
                 });
-                console.log('Editando fila:', rowToEdit);
-            } else {
-                console.error('Fila para editar no encontrada para cédula:', selectedRowId);
             }
         } else {
-            const isEmpty = Object.values(newRowData).some(value => value.toString().trim() === '');
+            const isEmpty = !newRowData.carnet || !newRowData.nombre || !newRowData.apellido1;
             if (isEmpty) {
-                alert('Todos los campos deben ser rellenados.');
+                alert('Campos obligatorios: Carnet, Nombre, Primer Apellido');
                 return;
             }
 
             try {
+                const payload = {
+                    carnet: newRowData.carnet,
+                    nombre: newRowData.nombre,
+                    apellido1: newRowData.apellido1,
+                    apellido2: newRowData.apellido2,
+                    id_carrera: newRowData.id_carrera ? parseInt(newRowData.id_carrera) : null
+                };
+
                 if (selectedRowId === 'new-row') {
-                    await api.post('/crear_estudiante', newRowData);
+                    const { error } = await supabase
+                        .from('tbestudiante')
+                        .insert([payload]);
+                    if (error) throw error;
+                    alert('Estudiante creado con éxito');
                 } else {
-                    await api.put(`/actualizar_estudiante/${selectedRowId}`, newRowData);
+                    const { error } = await supabase
+                        .from('tbestudiante')
+                        .update(payload)
+                        .eq('id', selectedRowId);
+                    if (error) throw error;
+                    alert('Estudiante actualizado con éxito');
                 }
                 await fetchStudents();
                 setIsEditing(false);
                 setSelectedRowId(null);
-                setNewRowData({
-                    cedulaEstudiante: '',
-                    '1er_nombre': '',
-                    '2do_nombre': '',
-                    '1er_ape': '',
-                    '2do_ape': '',
-                    idcarrera: '',
-                    cedulaTutor: ''
-                });
-                alert('Cambios guardados exitosamente.');
-                console.log('Cambios guardados, estado reseteado');
             } catch (error) {
                 console.error('Error al guardar estudiante:', error);
-                alert('Error al guardar los cambios');
+                alert('Error al guardar: ' + error.message);
             }
         }
     };
 
     const handleDeleteClick = async () => {
-        console.log('Eliminar clicado, selectedRowId:', selectedRowId, 'isEditing:', isEditing);
         if (!selectedRowId && !isEditing) {
             alert('Por favor, selecciona una fila para eliminar.');
             return;
@@ -213,24 +210,26 @@ const ModuloEstudiantes = () => {
             setIsEditing(false);
             setSelectedRowId(null);
             setNewRowData({
-                cedulaEstudiante: '',
-                '1er_nombre': '',
-                '2do_nombre': '',
-                '1er_ape': '',
-                '2do_ape': '',
-                idcarrera: '',
-                cedulaTutor: ''
+                carnet: '',
+                nombre: '',
+                apellido1: '',
+                apellido2: '',
+                id_carrera: ''
             });
-            alert('Edición cancelada.');
-            console.log('Edición cancelada, estado reseteado');
         } else {
             if (window.confirm('¿Estás seguro de que quieres eliminar la fila seleccionada?')) {
+                const supabase = createClient();
                 try {
-                    await api.delete(`/eliminar_estudiante/${selectedRowId}`);
+                    const { error } = await supabase
+                        .from('tbestudiante')
+                        .delete()
+                        .eq('id', selectedRowId);
+                    
+                    if (error) throw error;
+                    
                     await fetchStudents();
                     setSelectedRowId(null);
                     alert('Fila eliminada.');
-                    console.log('Fila eliminada, selectedRowId reseteado');
                 } catch (error) {
                     console.error('Error al eliminar estudiante:', error);
                     alert('Error al eliminar el estudiante');
@@ -321,46 +320,29 @@ const ModuloEstudiantes = () => {
                         <table className={styles.dataTable} id="studentsTable">
                             <thead>
                                 <tr>
-                                    <th>Cedula</th>
-                                    <th>Primer Nombre</th>
-                                    <th>Segundo Nombre</th>
+                                    <th>Carnet</th>
+                                    <th>Nombre</th>
                                     <th>Primer Apellido</th>
                                     <th>Segundo Apellido</th>
                                     <th>Carrera</th>
-                                    <th>Tutor</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {isEditing && selectedRowId === 'new-row' && (
                                     <tr className={styles.selected}>
-                                        <td><input type="text" value={newRowData.cedulaEstudiante} onChange={(e) => handleInputChange(e, 'cedulaEstudiante')} /></td>
-                                        <td><input type="text" value={newRowData['1er_nombre']} onChange={(e) => handleInputChange(e, '1er_nombre')} /></td>
-                                        <td><input type="text" value={newRowData['2do_nombre']} onChange={(e) => handleInputChange(e, '2do_nombre')} /></td>
-                                        <td><input type="text" value={newRowData['1er_ape']} onChange={(e) => handleInputChange(e, '1er_ape')} /></td>
-                                        <td><input type="text" value={newRowData['2do_ape']} onChange={(e) => handleInputChange(e, '2do_ape')} /></td>
+                                        <td><input type="text" value={newRowData.carnet} onChange={(e) => handleInputChange(e, 'carnet')} /></td>
+                                        <td><input type="text" value={newRowData.nombre} onChange={(e) => handleInputChange(e, 'nombre')} /></td>
+                                        <td><input type="text" value={newRowData.apellido1} onChange={(e) => handleInputChange(e, 'apellido1')} /></td>
+                                        <td><input type="text" value={newRowData.apellido2} onChange={(e) => handleInputChange(e, 'apellido2')} /></td>
                                         <td>
                                             <select
                                                 className="form-select"
-                                                value={careerOptions.find(option => careerIdMap[option] === newRowData.idcarrera) || ''}
-                                                onChange={(e) => handleInputChange({ target: { value: careerIdMap[e.target.value] || '' } }, 'idcarrera')}
+                                                value={newRowData.id_carrera}
+                                                onChange={(e) => handleInputChange(e, 'id_carrera')}
                                             >
                                                 <option value="">Seleccione una carrera</option>
-                                                {careerOptions.map((option, index) => (
-                                                    <option key={index} value={option}>{option}</option>
-                                                ))}
-                                            </select>
-                                        </td>
-                                        <td>
-                                            <select
-                                                className="form-select"
-                                                value={newRowData.cedulaTutor}
-                                                onChange={(e) => handleInputChange(e, 'cedulaTutor')}
-                                            >
-                                                <option value="">Seleccione un tutor</option>
-                                                {tutors.map((tutor, index) => (
-                                                    <option key={index} value={tutor.cedulaTutor}>
-                                                        {`${tutor['1er_nombre']} ${tutor['1er_ape']}`}
-                                                    </option>
+                                                {careers.map((career) => (
+                                                    <option key={career.id} value={career.id}>{career.nombre}</option>
                                                 ))}
                                             </select>
                                         </td>
@@ -368,41 +350,26 @@ const ModuloEstudiantes = () => {
                                 )}
                                 {students.map(student => (
                                     <tr
-                                        key={student.cedula}
-                                        className={selectedRowId === student.cedula ? styles.selected : ''}
-                                        onClick={(e) => handleRowClick(e, student.cedula)}
+                                        key={student.id}
+                                        className={selectedRowId === student.id ? styles.selected : ''}
+                                        onClick={(e) => handleRowClick(e, student.id)}
                                         style={{ cursor: isEditing ? 'not-allowed' : 'pointer' }}
                                     >
-                                        {isEditing && selectedRowId === student.cedula ? (
+                                        {isEditing && selectedRowId === student.id ? (
                                             <>
-                                                <td><input type="text" value={newRowData.cedulaEstudiante} onChange={(e) => handleInputChange(e, 'cedulaEstudiante')} /></td>
-                                                <td><input type="text" value={newRowData['1er_nombre']} onChange={(e) => handleInputChange(e, '1er_nombre')} /></td>
-                                                <td><input type="text" value={newRowData['2do_nombre']} onChange={(e) => handleInputChange(e, '2do_nombre')} /></td>
-                                                <td><input type="text" value={newRowData['1er_ape']} onChange={(e) => handleInputChange(e, '1er_ape')} /></td>
-                                                <td><input type="text" value={newRowData['2do_ape']} onChange={(e) => handleInputChange(e, '2do_ape')} /></td>
+                                                <td><input type="text" value={newRowData.carnet} onChange={(e) => handleInputChange(e, 'carnet')} /></td>
+                                                <td><input type="text" value={newRowData.nombre} onChange={(e) => handleInputChange(e, 'nombre')} /></td>
+                                                <td><input type="text" value={newRowData.apellido1} onChange={(e) => handleInputChange(e, 'apellido1')} /></td>
+                                                <td><input type="text" value={newRowData.apellido2} onChange={(e) => handleInputChange(e, 'apellido2')} /></td>
                                                 <td>
                                                     <select
                                                         className="form-select"
-                                                        value={careerOptions.find(option => careerIdMap[option] === newRowData.idcarrera) || ''}
-                                                        onChange={(e) => handleInputChange({ target: { value: careerIdMap[e.target.value] || '' } }, 'idcarrera')}
+                                                        value={newRowData.id_carrera}
+                                                        onChange={(e) => handleInputChange(e, 'id_carrera')}
                                                     >
                                                         <option value="">Seleccione una carrera</option>
-                                                        {careerOptions.map((option, index) => (
-                                                            <option key={index} value={option}>{option}</option>
-                                                        ))}
-                                                    </select>
-                                                </td>
-                                                <td>
-                                                    <select
-                                                        className="form-select"
-                                                        value={newRowData.cedulaTutor}
-                                                        onChange={(e) => handleInputChange(e, 'cedulaTutor')}
-                                                    >
-                                                        <option value="">Seleccione un tutor</option>
-                                                        {tutors.map((tutor, index) => (
-                                                            <option key={index} value={tutor.cedulaTutor}>
-                                                                {`${tutor['1er_nombre']} ${tutor['1er_ape']}`}
-                                                            </option>
+                                                        {careers.map((career) => (
+                                                            <option key={career.id} value={career.id}>{career.nombre}</option>
                                                         ))}
                                                     </select>
                                                 </td>
@@ -411,15 +378,9 @@ const ModuloEstudiantes = () => {
                                             <>
                                                 <td>{student.cedula}</td>
                                                 <td>{student.firstName}</td>
-                                                <td>{student.secondName}</td>
                                                 <td>{student.lastName}</td>
                                                 <td>{student.secondLastName}</td>
                                                 <td>{student.career}</td>
-                                                <td>
-                                                    {tutors.find(tutor => tutor.cedulaTutor === student.cedulaTutor)
-                                                        ? `${tutors.find(tutor => tutor.cedulaTutor === student.cedulaTutor)['1er_nombre']} ${tutors.find(tutor => tutor.cedulaTutor === student.cedulaTutor)['1er_ape']}`
-                                                        : student.cedulaTutor}
-                                                </td>
                                             </>
                                         )}
                                     </tr>
