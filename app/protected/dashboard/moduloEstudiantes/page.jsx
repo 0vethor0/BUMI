@@ -1,10 +1,13 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
+
 import { createClient } from '@/lib/supabase/client';
-import styles from '../../styles/ModuloEstudiantes.module.css';
+import styles from '../../../styles/ModuloEstudiantes.module.css';
 import { useRouter } from 'next/navigation';
+import Sidebar from '@/components/ui/Sidebar';
+
+
 
 const ModuloEstudiantes = () => {
     const router = useRouter();
@@ -13,12 +16,12 @@ const ModuloEstudiantes = () => {
     const [selectedRowId, setSelectedRowId] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
     const [newRowData, setNewRowData] = useState({
-        carnet: '',
-        nombre: '',
-        apellido1: '',
-        apellido2: '',
-        id_carrera: '',
-        // cedulaTutor removed as it is not in the schema
+        id: '',
+        primer_nomb: '',
+        segundo_nomb: '',
+        primer_ape: '',
+        segundo_ape: '',
+        id_carrera: ''
     });
     const [searchTerm, setSearchTerm] = useState('');
     const [careers, setCareers] = useState([]);
@@ -29,9 +32,15 @@ const ModuloEstudiantes = () => {
             const { data, error } = await supabase
                 .from('tbestudiante')
                 .select(`
-                    *,
+                    id,
+                    created_at,
+                    primer_nomb,
+                    segundo_nomb,
+                    primer_ape,
+                    segundo_ape,
+                    id_carrera,
                     tbcarrera (
-                        nombre
+                        nombre_carrera
                     )
                 `);
             
@@ -39,18 +48,16 @@ const ModuloEstudiantes = () => {
 
             const mappedStudents = data.map(student => ({
                 id: student.id,
-                cedula: student.carnet,
-                firstName: student.nombre, // Assuming nombre stores the full first name or just one name
-                lastName: student.apellido1,
-                secondLastName: student.apellido2,
-                career: student.tbcarrera?.nombre || '',
+                firstName: [student.primer_nomb, student.segundo_nomb].filter(Boolean).join(' '),
+                lastName: [student.primer_ape, student.segundo_ape].filter(Boolean).join(' '),
+                career: student.tbcarrera?.nombre_carrera || '',
                 id_carrera: student.id_carrera
             }));
             setStudents(mappedStudents);
             setSelectedRowId(null);
         } catch (error) {
             console.error('Error al cargar estudiantes:', error);
-            alert('Error al cargar los estudiantes');
+            alert('Error al cargar los estudiantes: ' + error.message);
         }
     }, []);
 
@@ -83,29 +90,33 @@ const ModuloEstudiantes = () => {
             const { data, error } = await supabase
                 .from('tbestudiante')
                 .select(`
-                    *,
+                    id,
+                    created_at,
+                    primer_nomb,
+                    segundo_nomb,
+                    primer_ape,
+                    segundo_ape,
+                    id_carrera,
                     tbcarrera (
-                        nombre
+                        nombre_carrera
                     )
                 `)
-                .or(`carnet.ilike.%${searchTerm}%,nombre.ilike.%${searchTerm}%,apellido1.ilike.%${searchTerm}%`);
+                .or(`id.ilike.%${searchTerm}%, primer_nomb.ilike.%${searchTerm}%, segundo_nomb.ilike.%${searchTerm}%, primer_ape.ilike.%${searchTerm}%, segundo_ape.ilike.%${searchTerm}%`);
 
             if (error) throw error;
 
             const mappedStudents = data.map(student => ({
                 id: student.id,
-                cedula: student.carnet,
-                firstName: student.nombre,
-                lastName: student.apellido1,
-                secondLastName: student.apellido2,
-                career: student.tbcarrera?.nombre || '',
+                firstName: [student.primer_nomb, student.segundo_nomb].filter(Boolean).join(' '),
+                lastName: [student.primer_ape, student.segundo_ape].filter(Boolean).join(' '),
+                career: student.tbcarrera?.nombre_carrera || '',
                 id_carrera: student.id_carrera
             }));
             setStudents(mappedStudents);
             setSelectedRowId(null);
         } catch (error) {
             console.error('Error al buscar estudiantes:', error);
-            alert('Error al buscar estudiantes');
+            alert('Error al buscar estudiantes: ' + error.message);
         }
     };
 
@@ -132,10 +143,11 @@ const ModuloEstudiantes = () => {
         setSelectedRowId('new-row');
         setIsEditing(true);
         setNewRowData({
-            carnet: '',
-            nombre: '',
-            apellido1: '',
-            apellido2: '',
+            id: '',
+            primer_nomb: '',
+            segundo_nomb: '',
+            primer_ape: '',
+            segundo_ape: '',
             id_carrera: ''
         });
     };
@@ -152,37 +164,42 @@ const ModuloEstudiantes = () => {
             setIsEditing(true);
             const rowToEdit = students.find(student => student.id === selectedRowId);
             if (rowToEdit) {
+                const [primer_nomb = '', segundo_nomb = ''] = rowToEdit.firstName.split(' ');
+                const [primer_ape = '', segundo_ape = ''] = rowToEdit.lastName.split(' ');
                 setNewRowData({
-                    carnet: rowToEdit.cedula,
-                    nombre: rowToEdit.firstName,
-                    apellido1: rowToEdit.lastName,
-                    apellido2: rowToEdit.secondLastName,
+                    id: rowToEdit.id,
+                    primer_nomb,
+                    segundo_nomb,
+                    primer_ape,
+                    segundo_ape,
                     id_carrera: rowToEdit.id_carrera
                 });
             }
         } else {
-            const isEmpty = !newRowData.carnet || !newRowData.nombre || !newRowData.apellido1;
+            const isEmpty = !newRowData.id || !newRowData.primer_nomb || !newRowData.primer_ape;
             if (isEmpty) {
-                alert('Campos obligatorios: Carnet, Nombre, Primer Apellido');
+                alert('Campos obligatorios: Cedula, Primer Nombre, Primer Apellido');
                 return;
             }
 
             try {
                 const payload = {
-                    carnet: newRowData.carnet,
-                    nombre: newRowData.nombre,
-                    apellido1: newRowData.apellido1,
-                    apellido2: newRowData.apellido2,
+                    primer_nomb: newRowData.primer_nomb,
+                    segundo_nomb: newRowData.segundo_nomb,
+                    primer_ape: newRowData.primer_ape,
+                    segundo_ape: newRowData.segundo_ape,
                     id_carrera: newRowData.id_carrera ? parseInt(newRowData.id_carrera) : null
                 };
 
                 if (selectedRowId === 'new-row') {
+                    // Insertar nuevo
                     const { error } = await supabase
                         .from('tbestudiante')
-                        .insert([payload]);
+                        .insert([{ ...payload, id: newRowData.id }]);
                     if (error) throw error;
                     alert('Estudiante creado con éxito');
                 } else {
+                    // Actualizar existente
                     const { error } = await supabase
                         .from('tbestudiante')
                         .update(payload)
@@ -190,6 +207,7 @@ const ModuloEstudiantes = () => {
                     if (error) throw error;
                     alert('Estudiante actualizado con éxito');
                 }
+
                 await fetchStudents();
                 setIsEditing(false);
                 setSelectedRowId(null);
@@ -210,10 +228,11 @@ const ModuloEstudiantes = () => {
             setIsEditing(false);
             setSelectedRowId(null);
             setNewRowData({
-                carnet: '',
-                nombre: '',
-                apellido1: '',
-                apellido2: '',
+                id: '',
+                primer_nomb: '',
+                segundo_nomb: '',
+                primer_ape: '',
+                segundo_ape: '',
                 id_carrera: ''
             });
         } else {
@@ -258,28 +277,11 @@ const ModuloEstudiantes = () => {
 
     return (
         <div className={`${styles.container} ${sidebarCollapsed ? styles.collapsed : ''}`}>
-            <aside className={styles.sidebar}>
-                <div className={styles.sidebarHeader}>
-                    <div className={styles.logo} id="sidebarToggle" onClick={toggleSidebar}>
-                        <i className="fas fa-bars"></i>
-                    </div>
-                    <span className={styles.appName}>Bumi Unefa</span>
-                </div>
-                <nav className={styles.sidebarNav}>
-                    <ul>
-                        <li><a href="#"><i className="fas fa-chart-line"></i> <span>Dashboard</span></a></li>
-                        <li><Link href="../../dashboard/moduloTutores/page.jsx"><i className="fas fa-chalkboard-teacher"></i> <span>Tutores</span></Link></li>
-                        <li className={styles.active}><a href="#"><i className="fas fa-user-graduate"></i> <span>Estudiantes</span></a></li>
-                        <li><a href="#"><i className="fas fa-users"></i> <span>Grupos</span></a></li>
-                        <li><Link href="../../dashboard/moduloProyectos/page.jsx"><i className="fas fa-project-diagram"></i> <span>Proyectos</span></Link></li>
-                        <li><a href="#"><i className="fas fa-clipboard-list"></i> <span>Estado de Proyecto</span></a></li>
-                    </ul>
-                    <ul className={styles.logout}>
-                        <li><a href="#"><i className="fas fa-cog"></i> <span>Configuracion</span></a></li>
-                        <li><Link href="/"><i className="fas fa-sign-out-alt"></i> <span>Salir</span></Link></li>
-                    </ul>
-                </nav>
-            </aside>
+            
+            <Sidebar 
+                isCollapsed={sidebarCollapsed} 
+                onToggle={toggleSidebar} 
+            />
 
             <main className={styles.mainContent}>
                 <header className={styles.header}>
@@ -298,7 +300,7 @@ const ModuloEstudiantes = () => {
                         <i className="fas fa-search"></i>
                         <input 
                             type="text" 
-                            placeholder="Buscar por cédula o nombre..." 
+                            placeholder="Buscar por cedula o nombre..." 
                             value={searchTerm}
                             onChange={handleSearchChange}
                         />
@@ -320,71 +322,83 @@ const ModuloEstudiantes = () => {
                         <table className={styles.dataTable} id="studentsTable">
                             <thead>
                                 <tr>
-                                    <th>Carnet</th>
-                                    <th>Nombre</th>
-                                    <th>Primer Apellido</th>
-                                    <th>Segundo Apellido</th>
+                                    <th>Cedula</th>
+                                    <th>Nombres</th>
+                                    <th>Apellidos</th>
                                     <th>Carrera</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {isEditing && selectedRowId === 'new-row' && (
                                     <tr className={styles.selected}>
-                                        <td><input type="text" value={newRowData.carnet} onChange={(e) => handleInputChange(e, 'carnet')} /></td>
-                                        <td><input type="text" value={newRowData.nombre} onChange={(e) => handleInputChange(e, 'nombre')} /></td>
-                                        <td><input type="text" value={newRowData.apellido1} onChange={(e) => handleInputChange(e, 'apellido1')} /></td>
-                                        <td><input type="text" value={newRowData.apellido2} onChange={(e) => handleInputChange(e, 'apellido2')} /></td>
+                                        <td><input type="text" value={newRowData.id} onChange={(e) => handleInputChange(e, 'id')} placeholder="Carnet/ID" /></td>
+                                        <td>
+                                            <input type="text" value={newRowData.primer_nomb} onChange={(e) => handleInputChange(e, 'primer_nomb')} placeholder="Primer Nombre" />
+                                            <input type="text" value={newRowData.segundo_nomb} onChange={(e) => handleInputChange(e, 'segundo_nomb')} placeholder="Segundo Nombre" />
+                                        </td>
+                                        <td>
+                                            <input type="text" value={newRowData.primer_ape} onChange={(e) => handleInputChange(e, 'primer_ape')} placeholder="Primer Apellido" />
+                                            <input type="text" value={newRowData.segundo_ape} onChange={(e) => handleInputChange(e, 'segundo_ape')} placeholder="Segundo Apellido" />
+                                        </td>
                                         <td>
                                             <select
-                                                className="form-select"
                                                 value={newRowData.id_carrera}
                                                 onChange={(e) => handleInputChange(e, 'id_carrera')}
                                             >
                                                 <option value="">Seleccione una carrera</option>
                                                 {careers.map((career) => (
-                                                    <option key={career.id} value={career.id}>{career.nombre}</option>
+                                                    <option key={career.id} value={career.id}>{career.nombre_carrera}</option>
                                                 ))}
                                             </select>
                                         </td>
                                     </tr>
                                 )}
-                                {students.map(student => (
-                                    <tr
-                                        key={student.id}
-                                        className={selectedRowId === student.id ? styles.selected : ''}
-                                        onClick={(e) => handleRowClick(e, student.id)}
-                                        style={{ cursor: isEditing ? 'not-allowed' : 'pointer' }}
-                                    >
-                                        {isEditing && selectedRowId === student.id ? (
-                                            <>
-                                                <td><input type="text" value={newRowData.carnet} onChange={(e) => handleInputChange(e, 'carnet')} /></td>
-                                                <td><input type="text" value={newRowData.nombre} onChange={(e) => handleInputChange(e, 'nombre')} /></td>
-                                                <td><input type="text" value={newRowData.apellido1} onChange={(e) => handleInputChange(e, 'apellido1')} /></td>
-                                                <td><input type="text" value={newRowData.apellido2} onChange={(e) => handleInputChange(e, 'apellido2')} /></td>
-                                                <td>
-                                                    <select
-                                                        className="form-select"
-                                                        value={newRowData.id_carrera}
-                                                        onChange={(e) => handleInputChange(e, 'id_carrera')}
-                                                    >
-                                                        <option value="">Seleccione una carrera</option>
-                                                        {careers.map((career) => (
-                                                            <option key={career.id} value={career.id}>{career.nombre}</option>
-                                                        ))}
-                                                    </select>
-                                                </td>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <td>{student.cedula}</td>
-                                                <td>{student.firstName}</td>
-                                                <td>{student.lastName}</td>
-                                                <td>{student.secondLastName}</td>
-                                                <td>{student.career}</td>
-                                            </>
-                                        )}
+                                {students.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="4" style={{ textAlign: 'center' }}>No hay estudiantes disponibles</td>
                                     </tr>
-                                ))}
+                                ) : (
+                                    students.map(student => (
+                                        <tr
+                                            key={student.id}
+                                            className={selectedRowId === student.id ? styles.selected : ''}
+                                            onClick={(e) => handleRowClick(e, student.id)}
+                                            style={{ cursor: isEditing ? 'not-allowed' : 'pointer' }}
+                                        >
+                                            {isEditing && selectedRowId === student.id ? (
+                                                <>
+                                                    <td><input type="text" value={newRowData.id} onChange={(e) => handleInputChange(e, 'id')} /></td>
+                                                    <td>
+                                                        <input type="text" value={newRowData.primer_nomb} onChange={(e) => handleInputChange(e, 'primer_nomb')} />
+                                                        <input type="text" value={newRowData.segundo_nomb} onChange={(e) => handleInputChange(e, 'segundo_nomb')} />
+                                                    </td>
+                                                    <td>
+                                                        <input type="text" value={newRowData.primer_ape} onChange={(e) => handleInputChange(e, 'primer_ape')} />
+                                                        <input type="text" value={newRowData.segundo_ape} onChange={(e) => handleInputChange(e, 'segundo_ape')} />
+                                                    </td>
+                                                    <td>
+                                                        <select
+                                                            value={newRowData.id_carrera}
+                                                            onChange={(e) => handleInputChange(e, 'id_carrera')}
+                                                        >
+                                                            <option value="">Seleccione una carrera</option>
+                                                            {careers.map((career) => (
+                                                                <option key={career.id} value={career.id}>{career.nombre_carrera}</option>
+                                                            ))}
+                                                        </select>
+                                                    </td>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <td>{student.id}</td>
+                                                    <td>{student.firstName}</td>
+                                                    <td>{student.lastName}</td>
+                                                    <td>{student.career}</td>
+                                                </>
+                                            )}
+                                        </tr>
+                                    ))
+                                )}
                             </tbody>
                         </table>
                     </div>
@@ -416,4 +430,3 @@ const ModuloEstudiantes = () => {
 };
 
 export default ModuloEstudiantes;
-

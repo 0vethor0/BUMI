@@ -1,21 +1,27 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import Link from 'next/link';
+import { useState, useEffect, useCallback } from 'react';
+
 import { createClient } from '@/lib/supabase/client';
-import styles from '../../styles/ModuloTutores.module.css';
+import styles from '../../../styles/ModuloTutores.module.css';
+import { useRouter } from 'next/navigation';
+import Sidebar from '@/components/ui/Sidebar';
+
+
 
 const ModuloTutores = () => {
+    const router = useRouter();
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [tutors, setTutors] = useState([]);
     const [selectedRowId, setSelectedRowId] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
     const [newRowData, setNewRowData] = useState({
-        cedula: '',
-        nombre: '',
-        apellido1: '',
-        apellido2: '',
-        especialidad: ''
+        cedula_tutor: '',
+        primer_nomb: '',
+        segundo_nomb: '',
+        primer_ape: '',
+        segundo_ape: ''
+        
     });
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -24,23 +30,29 @@ const ModuloTutores = () => {
         try {
             const { data, error } = await supabase
                 .from('tbtutor')
-                .select('*');
+                .select(`
+                    cedula_tutor,
+                    created_at,
+                    primer_nomb,
+                    segundo_nomb,
+                    primer_ape,
+                    segundo_ape
+                `);
             
             if (error) throw error;
 
             const mappedTutors = data.map(tutor => ({
-                id: tutor.id,
-                cedula: tutor.cedula,
-                firstName: tutor.nombre,
-                lastName: tutor.apellido1,
-                secondLastName: tutor.apellido2,
-                specialty: tutor.especialidad
+                id: tutor.cedula_tutor,
+                cedula: tutor.cedula_tutor,
+                firstName: [tutor.primer_nomb, tutor.segundo_nomb].filter(Boolean).join(' '),
+                lastName: [tutor.primer_ape, tutor.segundo_ape].filter(Boolean).join(' ')
             }));
+
             setTutors(mappedTutors);
             setSelectedRowId(null);
         } catch (error) {
             console.error('Error al cargar tutores:', error);
-            alert('Error al cargar los tutores');
+            alert('Error al cargar los tutores: ' + error.message);
         }
     }, []);
 
@@ -53,28 +65,42 @@ const ModuloTutores = () => {
             fetchTutors();
             return;
         }
+
         const supabase = createClient();
         try {
             const { data, error } = await supabase
                 .from('tbtutor')
-                .select('*')
-                .or(`cedula.ilike.%${searchTerm}%,nombre.ilike.%${searchTerm}%,apellido1.ilike.%${searchTerm}%`);
+                .select(`
+                    cedula_tutor,
+                    created_at,
+                    primer_nomb,
+                    segundo_nomb,
+                    primer_ape,
+                    segundo_ape,
+                `)
+                .or(`
+                    cedula_tutor.ilike.%${searchTerm}%,
+                    primer_nomb.ilike.%${searchTerm}%,
+                    segundo_nomb.ilike.%${searchTerm}%,
+                    primer_ape.ilike.%${searchTerm}%,
+                    segundo_ape.ilike.%${searchTerm}%
+                `);
 
             if (error) throw error;
 
             const mappedTutors = data.map(tutor => ({
-                id: tutor.id,
-                cedula: tutor.cedula,
-                firstName: tutor.nombre,
-                lastName: tutor.apellido1,
-                secondLastName: tutor.apellido2,
-                specialty: tutor.especialidad
+                id: tutor.cedula_tutor,
+                cedula: tutor.cedula_tutor,
+                firstName: [tutor.primer_nomb, tutor.segundo_nomb].filter(Boolean).join(' '),
+                lastName: [tutor.primer_ape, tutor.segundo_ape].filter(Boolean).join(' '),
+                
             }));
+
             setTutors(mappedTutors);
             setSelectedRowId(null);
         } catch (error) {
             console.error('Error al buscar tutores:', error);
-            alert('Error al buscar tutores');
+            alert('Error al buscar tutores: ' + error.message);
         }
     };
 
@@ -101,11 +127,12 @@ const ModuloTutores = () => {
         setSelectedRowId('new-row');
         setIsEditing(true);
         setNewRowData({
-            cedula: '',
-            nombre: '',
-            apellido1: '',
-            apellido2: '',
-            especialidad: ''
+            cedula_tutor: '',
+            primer_nomb: '',
+            segundo_nomb: '',
+            primer_ape: '',
+            segundo_ape: '',
+            
         });
     };
 
@@ -118,53 +145,65 @@ const ModuloTutores = () => {
         const supabase = createClient();
 
         if (!isEditing) {
+            // Entrar en modo edición
             setIsEditing(true);
             const rowToEdit = tutors.find(tutor => tutor.id === selectedRowId);
             if (rowToEdit) {
+                const [primer_nomb = '', segundo_nomb = ''] = rowToEdit.firstName.split(' ');
+                const [primer_ape = '', segundo_ape = ''] = rowToEdit.lastName.split(' ');
                 setNewRowData({
-                    cedula: rowToEdit.cedula,
-                    nombre: rowToEdit.firstName,
-                    apellido1: rowToEdit.lastName,
-                    apellido2: rowToEdit.secondLastName,
-                    especialidad: rowToEdit.specialty
+                    cedula_tutor: rowToEdit.cedula,
+                    primer_nomb,
+                    segundo_nomb,
+                    primer_ape,
+                    segundo_ape,
+                    
                 });
             }
         } else {
-            const isEmpty = !newRowData.cedula || !newRowData.nombre || !newRowData.apellido1;
+            // Guardar cambios
+            const isEmpty = !newRowData.cedula_tutor || !newRowData.primer_nomb || !newRowData.primer_ape;
             if (isEmpty) {
-                alert('Campos obligatorios: Cedula, Nombre, Primer Apellido');
+                alert('Campos obligatorios: Cédula, Primer Nombre, Primer Apellido');
                 return;
             }
 
             try {
                 const payload = {
-                    cedula: newRowData.cedula,
-                    nombre: newRowData.nombre,
-                    apellido1: newRowData.apellido1,
-                    apellido2: newRowData.apellido2,
-                    especialidad: newRowData.especialidad
+                    primer_nomb: newRowData.primer_nomb,
+                    segundo_nomb: newRowData.segundo_nomb || null,
+                    primer_ape: newRowData.primer_ape,
+                    segundo_ape: newRowData.segundo_ape || null,
+                    
                 };
 
+                let error;
+
                 if (selectedRowId === 'new-row') {
-                    const { error } = await supabase
+                    // Crear nuevo tutor
+                    ({ error } = await supabase
                         .from('tbtutor')
-                        .insert([payload]);
-                    if (error) throw error;
-                    alert('Tutor creado con éxito');
+                        .insert([{ ...payload, cedula_tutor: newRowData.cedula_tutor }]));
                 } else {
-                    const { error } = await supabase
+                    // Actualizar tutor existente
+                    ({ error } = await supabase
                         .from('tbtutor')
                         .update(payload)
-                        .eq('id', selectedRowId);
-                    if (error) throw error;
-                    alert('Tutor actualizado con éxito');
+                        .eq('cedula_tutor', selectedRowId));
                 }
+
+                if (error) throw error;
+
+                alert(selectedRowId === 'new-row' 
+                    ? 'Tutor creado con éxito' 
+                    : 'Tutor actualizado con éxito');
+
                 await fetchTutors();
                 setIsEditing(false);
                 setSelectedRowId(null);
             } catch (error) {
                 console.error('Error al guardar tutor:', error);
-                alert('Error al guardar: ' + error.message);
+                alert('Error al guardar: ' + (error.message || 'Error desconocido'));
             }
         }
     };
@@ -179,11 +218,12 @@ const ModuloTutores = () => {
             setIsEditing(false);
             setSelectedRowId(null);
             setNewRowData({
-                cedula: '',
-                nombre: '',
-                apellido1: '',
-                apellido2: '',
-                especialidad: ''
+                cedula_tutor: '',
+                primer_nomb: '',
+                segundo_nomb: '',
+                primer_ape: '',
+                segundo_ape: '',
+                
             });
         } else {
             if (window.confirm('¿Estás seguro de que quieres eliminar la fila seleccionada?')) {
@@ -192,16 +232,16 @@ const ModuloTutores = () => {
                     const { error } = await supabase
                         .from('tbtutor')
                         .delete()
-                        .eq('id', selectedRowId);
+                        .eq('cedula_tutor', selectedRowId);
                     
                     if (error) throw error;
                     
                     await fetchTutors();
                     setSelectedRowId(null);
-                    alert('Fila eliminada.');
+                    alert('Tutor eliminado.');
                 } catch (error) {
                     console.error('Error al eliminar tutor:', error);
-                    alert('Error al eliminar el tutor');
+                    alert('Error al eliminar el tutor: ' + error.message);
                 }
             }
         }
@@ -227,28 +267,11 @@ const ModuloTutores = () => {
 
     return (
         <div className={`${styles.container} ${sidebarCollapsed ? styles.collapsed : ''}`}>
-            <aside className={styles.sidebar}>
-                <div className={styles.sidebarHeader}>
-                    <div className={styles.logo} id="sidebarToggle" onClick={toggleSidebar}>
-                        <i className="fas fa-bars"></i>
-                    </div>
-                    <span className={styles.appName}>Bumi Unefa</span>
-                </div>
-                <nav className={styles.sidebarNav}>
-                    <ul>
-                        <li><a href="#"><i className="fas fa-chart-line"></i> <span>Dashboard</span></a></li>
-                        <li className={styles.active}><a href="#"><i className="fas fa-chalkboard-teacher"></i> <span>Tutores</span></a></li>
-                        <li><Link href="../moduloEstudiantes/page.jsx"><i className="fas fa-user-graduate"></i> <span>Estudiantes</span></Link></li>
-                        <li><a href="#"><i className="fas fa-users"></i> <span>Grupos</span></a></li>
-                        <li><Link href="../moduloProyectos/page.jsx"><i className="fas fa-project-diagram"></i> <span>Proyectos</span></Link></li>
-                        <li><a href="#"><i className="fas fa-clipboard-list"></i> <span>Estado de Proyecto</span></a></li>
-                    </ul>
-                    <ul className={styles.logout}>
-                        <li><a href="#"><i className="fas fa-cog"></i> <span>Configuracion</span></a></li>
-                        <li><Link href="/"><i className="fas fa-sign-out-alt"></i> <span>Salir</span></Link></li>
-                    </ul>
-                </nav>
-            </aside>
+            
+            <Sidebar 
+                isCollapsed={sidebarCollapsed} 
+                onToggle={toggleSidebar} 
+            />
 
             <main className={styles.mainContent}>
                 <header className={styles.header}>
@@ -289,55 +312,128 @@ const ModuloTutores = () => {
                         <table className={styles.dataTable} id="tutorsTable">
                             <thead>
                                 <tr>
-                                    <th>Cedula</th>
+                                    <th>Cédula</th>
                                     <th>Nombre</th>
-                                    <th>Primer Apellido</th>
-                                    <th>Segundo Apellido</th>
-                                    <th>Especialidad</th>
+                                    <th>Apellidos</th>
+                                
                                 </tr>
                             </thead>
                             <tbody>
                                 {isEditing && selectedRowId === 'new-row' && (
                                     <tr className={styles.selected}>
-                                        <td><input type="text" value={newRowData.cedula} onChange={(e) => handleInputChange(e, 'cedula')} /></td>
-                                        <td><input type="text" value={newRowData.nombre} onChange={(e) => handleInputChange(e, 'nombre')} /></td>
-                                        <td><input type="text" value={newRowData.apellido1} onChange={(e) => handleInputChange(e, 'apellido1')} /></td>
-                                        <td><input type="text" value={newRowData.apellido2} onChange={(e) => handleInputChange(e, 'apellido2')} /></td>
-                                        <td><input type="text" value={newRowData.especialidad} onChange={(e) => handleInputChange(e, 'especialidad')} /></td>
+                                        <td>
+                                            <input 
+                                                type="text" 
+                                                value={newRowData.cedula_tutor} 
+                                                onChange={(e) => handleInputChange(e, 'cedula_tutor')} 
+                                                placeholder="Cédula" 
+                                            />
+                                        </td>
+                                        <td>
+                                            <input 
+                                                type="text" 
+                                                placeholder="Primer Nombre" 
+                                                value={newRowData.primer_nomb} 
+                                                onChange={(e) => handleInputChange(e, 'primer_nomb')} 
+                                            />
+                                            <input 
+                                                type="text" 
+                                                placeholder="Segundo Nombre" 
+                                                value={newRowData.segundo_nomb} 
+                                                onChange={(e) => handleInputChange(e, 'segundo_nomb')} 
+                                            />
+                                        </td>
+                                        <td>
+                                            <input 
+                                                type="text" 
+                                                placeholder="Primer Apellido" 
+                                                value={newRowData.primer_ape} 
+                                                onChange={(e) => handleInputChange(e, 'primer_ape')} 
+                                            />
+                                            <input 
+                                                type="text" 
+                                                placeholder="Segundo Apellido" 
+                                                value={newRowData.segundo_ape} 
+                                                onChange={(e) => handleInputChange(e, 'segundo_ape')} 
+                                            />
+                                        </td>
+
                                     </tr>
                                 )}
-                                {tutors.map(tutor => (
-                                    <tr
-                                        key={tutor.id}
-                                        className={selectedRowId === tutor.id ? styles.selected : ''}
-                                        onClick={(e) => handleRowClick(e, tutor.id)}
-                                        style={{ cursor: isEditing ? 'not-allowed' : 'pointer' }}
-                                    >
-                                        {isEditing && selectedRowId === tutor.id ? (
-                                            <>
-                                                <td><input type="text" value={newRowData.cedula} onChange={(e) => handleInputChange(e, 'cedula')} /></td>
-                                                <td><input type="text" value={newRowData.nombre} onChange={(e) => handleInputChange(e, 'nombre')} /></td>
-                                                <td><input type="text" value={newRowData.apellido1} onChange={(e) => handleInputChange(e, 'apellido1')} /></td>
-                                                <td><input type="text" value={newRowData.apellido2} onChange={(e) => handleInputChange(e, 'apellido2')} /></td>
-                                                <td><input type="text" value={newRowData.especialidad} onChange={(e) => handleInputChange(e, 'especialidad')} /></td>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <td>{tutor.cedula}</td>
-                                                <td>{tutor.firstName}</td>
-                                                <td>{tutor.lastName}</td>
-                                                <td>{tutor.secondLastName}</td>
-                                                <td>{tutor.specialty}</td>
-                                            </>
-                                        )}
+
+                                {tutors.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="4" style={{ textAlign: 'center' }}>
+                                            No hay tutores disponibles
+                                        </td>
                                     </tr>
-                                ))}
+                                ) : (
+                                    tutors.map(tutor => (
+                                        <tr
+                                            key={tutor.id}
+                                            className={selectedRowId === tutor.id ? styles.selected : ''}
+                                            onClick={(e) => handleRowClick(e, tutor.id)}
+                                            style={{ cursor: isEditing ? 'not-allowed' : 'pointer' }}
+                                        >
+                                            {isEditing && selectedRowId === tutor.id ? (
+                                                <>
+                                                    <td>
+                                                        <input 
+                                                            type="text" 
+                                                            value={newRowData.cedula_tutor} 
+                                                            onChange={(e) => handleInputChange(e, 'cedula_tutor')} 
+                                                        />
+                                                    </td>
+                                                    <td>
+                                                        <input 
+                                                            type="text" 
+                                                            value={newRowData.primer_nomb} 
+                                                            onChange={(e) => handleInputChange(e, 'primer_nomb')} 
+                                                        />
+                                                        <input 
+                                                            type="text" 
+                                                            value={newRowData.segundo_nomb} 
+                                                            onChange={(e) => handleInputChange(e, 'segundo_nomb')} 
+                                                        />
+                                                    </td>
+                                                    <td>
+                                                        <input 
+                                                            type="text" 
+                                                            value={newRowData.primer_ape} 
+                                                            onChange={(e) => handleInputChange(e, 'primer_ape')} 
+                                                        />
+                                                        <input 
+                                                            type="text" 
+                                                            value={newRowData.segundo_ape} 
+                                                            onChange={(e) => handleInputChange(e, 'segundo_ape')} 
+                                                        />
+                                                    </td>
+                                                    
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <td>{tutor.cedula}</td>
+                                                    <td>{tutor.firstName}</td>
+                                                    <td>{tutor.lastName}</td>
+
+                                                </>
+                                            )}
+                                        </tr>
+                                    ))
+                                )}
                             </tbody>
                         </table>
                     </div>
 
                     <div className={styles.actions}>
-                        <button className={`${styles.button} ${styles.buttonSecondary}`} id="newBtn" onClick={handleNewClick} disabled={isEditing}>Nuevo</button>
+                        <button 
+                            className={`${styles.button} ${styles.buttonSecondary}`} 
+                            id="newBtn" 
+                            onClick={handleNewClick} 
+                            disabled={isEditing}
+                        >
+                            Nuevo
+                        </button>
                         <button
                             className={`${styles.button} ${styles.buttonOutline}`}
                             id="modifyBtn"
@@ -362,4 +458,3 @@ const ModuloTutores = () => {
 };
 
 export default ModuloTutores;
-

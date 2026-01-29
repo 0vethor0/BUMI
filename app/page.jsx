@@ -11,6 +11,7 @@ const PaginaPrincipal = () => {
     return (
         <>
             <header className="header">
+                
                 <div className="header-top">
                     <div className="logo">BUMI</div>
                     <nav className="top-nav">

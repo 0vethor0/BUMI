@@ -20,7 +20,7 @@ export default function LogoutButton() {
         return;
       }
       // Redirigir al login
-      router.push('/auth/login');
+      router.push('/');
     } catch (err) {
       console.error('Logout error:', err);
       alert('Error al cerrar sesión');

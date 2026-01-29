@@ -1,0 +1,850 @@
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import styles from '../../../styles/ModuloGrupos.module.css';
+import Sidebar from '@/components/ui/Sidebar';
+
+const ModuloGrupos = () => {
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+    const [groups, setGroups] = useState([]);
+    const [selectedRowKey, setSelectedRowKey] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    // Datos del usuario (área)
+    const [userAreaId, setUserAreaId] = useState(null);
+    const [userAreaName, setUserAreaName] = useState('Cargando...');
+
+    // Wizard
+    const [isWizardOpen, setIsWizardOpen] = useState(false);
+    const [currentStep, setCurrentStep] = useState(1);
+    const [editingGroupKey, setEditingGroupKey] = useState(null);
+    const [originalGroupKey, setOriginalGroupKey] = useState(null);
+    const [wizardData, setWizardData] = useState({
+        periodo: '',
+        id_proyecto: null,
+        selectedStudents: [], // arreglo de {id, nombreCompleto, ...}
+        nombreGrupo: ''
+    });
+
+    // Datos para selección
+    const [projectsList, setProjectsList] = useState([]);
+    const [studentsList, setStudentsList] = useState([]);
+    const [areasInvestigacion, setAreasInvestigacion] = useState([]);
+
+    const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed);
+
+    // Obtener área del usuario
+    const fetchUserArea = useCallback(async () => {
+        const supabase = createClient();
+        try {
+            const { data: areaId, error: rpcError } = await supabase.rpc('get_user_area');
+            if (rpcError) throw rpcError;
+
+            if (areaId === null) {
+                setUserAreaName('Sin área asignada');
+                return;
+            }
+
+            setUserAreaId(areaId);
+
+            const { data: areaData, error: areaError } = await supabase
+                .from('tbareainvestigacion')
+                .select('nomb_area')
+                .eq('id', areaId)
+                .single();
+
+            if (areaError) throw areaError;
+            setUserAreaName(areaData?.nomb_area || 'Área no encontrada');
+        } catch (err) {
+            console.error('Error al obtener área del usuario:', err);
+            setUserAreaName('Error al cargar área');
+        }
+    }, []);
+
+    // Cargar grupos (tabla principal) - VERSIÓN COMPLETAMENTE CORREGIDA
+    const fetchGroups = useCallback(async () => {
+        setLoading(true);
+        const supabase = createClient();
+        try {
+            // Primero obtenemos todos los grupos - SIN REFERENCIA A ID
+            const { data: gruposData, error: gruposError } = await supabase
+                .from('tbgrupos')
+                .select(`
+                    cedula_estudiante,
+                    id_proyecto,
+                    periodo_academico,
+                    nombre_grupo,
+                    estado,
+                    created_by
+                `)
+                .order('nombre_grupo', { ascending: true });
+
+            if (gruposError) throw gruposError;
+
+            if (!gruposData || gruposData.length === 0) {
+                setGroups([]);
+                return;
+            }
+
+            // Obtenemos IDs de proyectos únicos
+            const proyectoIds = [...new Set(gruposData.map(g => g.id_proyecto).filter(Boolean))];
+            
+            // Obtenemos información de proyectos
+            let proyectosMap = {};
+            if (proyectoIds.length > 0) {
+                const { data: proyectosData, error: proyectosError } = await supabase
+                    .from('tbproyecto')
+                    .select('id, titulo, id_area_investigacion')
+                    .in('id', proyectoIds);
+
+                if (proyectosError) throw proyectosError;
+
+                // Crear mapa de proyectos
+                proyectosData?.forEach(proyecto => {
+                    proyectosMap[proyecto.id] = proyecto;
+                });
+            }
+
+            // Obtenemos cédulas de estudiantes únicas
+            const cedulasEstudiantes = [...new Set(gruposData.map(g => g.cedula_estudiante).filter(Boolean))];
+            
+            // Obtenemos información de estudiantes
+            let estudiantesMap = {};
+            if (cedulasEstudiantes.length > 0) {
+                const { data: estudiantesData, error: estudiantesError } = await supabase
+                    .from('tbestudiante')
+                    .select('id, primer_nomb, primer_ape, segundo_nomb, segundo_ape')
+                    .in('id', cedulasEstudiantes);
+
+                if (estudiantesError) throw estudiantesError;
+
+                // Crear mapa de estudiantes
+                estudiantesData?.forEach(est => {
+                    estudiantesMap[est.id] = `${est.primer_nomb || ''} ${est.segundo_nomb || ''} ${est.primer_ape || ''} ${est.segundo_ape || ''}`.trim();
+                });
+            }
+
+            // Agrupamos por nombre_grupo
+            const gruposPorNombre = {};
+            
+            gruposData.forEach(grupo => {
+                const nombre = grupo.nombre_grupo;
+                const compositeKey = `${grupo.cedula_estudiante}|${grupo.id_proyecto}|${grupo.periodo_academico}`;
+                
+                if (!gruposPorNombre[nombre]) {
+                    const proyecto = proyectosMap[grupo.id_proyecto];
+                    
+                    gruposPorNombre[nombre] = {
+                        compositeKey, // Usamos la primera clave encontrada
+                        nombre_grupo: nombre || 'Sin nombre',
+                        periodo_academico: grupo.periodo_academico || '—',
+                        cedulas: new Set(),
+                        estudiantes: new Set(),
+                        id_proyecto: grupo.id_proyecto,
+                        proyecto: proyecto?.titulo || 'Sin proyecto asignado',
+                        id_area_investigacion: proyecto?.id_area_investigacion,
+                        estado: grupo.estado || 'Sin estado',
+                        created_by: grupo.created_by
+                    };
+                }
+                
+                // Agregar cédulas y nombres
+                if (grupo.cedula_estudiante) {
+                    gruposPorNombre[nombre].cedulas.add(grupo.cedula_estudiante);
+                    
+                    // Agregar nombre del estudiante
+                    if (estudiantesMap[grupo.cedula_estudiante]) {
+                        gruposPorNombre[nombre].estudiantes.add(estudiantesMap[grupo.cedula_estudiante]);
+                    }
+                }
+            });
+
+            // Convertir a array y formatear
+            const mappedGroups = Object.values(gruposPorNombre).map(group => ({
+                compositeKey: group.compositeKey,
+                nombre_grupo: group.nombre_grupo,
+                periodo_academico: group.periodo_academico,
+                cedula_estudiante: Array.from(group.cedulas).join(', '),
+                estudiante: Array.from(group.estudiantes).join(', ') || 'Sin estudiantes asignados',
+                id_proyecto: group.id_proyecto,
+                proyecto: group.proyecto,
+                id_area_investigacion: group.id_area_investigacion,
+                estado: group.estado
+            }));
+
+            // Filtrar por área del usuario si está disponible
+            const filteredGroups = userAreaId 
+                ? mappedGroups.filter(group => group.id_area_investigacion === userAreaId)
+                : mappedGroups;
+
+            setGroups(filteredGroups);
+        } catch (error) {
+            console.error('Error fetching groups:', error);
+            
+            // Versión simplificada como fallback
+            try {
+                const { data, error: simpleError } = await supabase
+                    .from('tbgrupos')
+                    .select('cedula_estudiante, id_proyecto, periodo_academico, nombre_grupo, estado')
+                    .order('nombre_grupo', { ascending: true });
+
+                if (simpleError) throw simpleError;
+
+                const simpleGroups = (data || []).map((group, index) => ({
+                    compositeKey: `${group.cedula_estudiante}|${group.id_proyecto}|${group.periodo_academico}`,
+                    nombre_grupo: group.nombre_grupo || 'Sin nombre',
+                    periodo_academico: group.periodo_academico || '—',
+                    cedula_estudiante: group.cedula_estudiante || '—',
+                    estudiante: 'Información no disponible',
+                    id_proyecto: group.id_proyecto,
+                    proyecto: 'Información no disponible',
+                    estado: group.estado || 'Sin estado'
+                }));
+
+                setGroups(simpleGroups);
+            } catch (fallbackError) {
+                console.error('Error en fallback:', fallbackError);
+                alert('No se pudieron cargar los grupos: ' + (fallbackError.message || 'Error desconocido'));
+                setGroups([]);
+            }
+        } finally {
+            setLoading(false);
+        }
+    }, [userAreaId]);
+
+    // Cargar datos para el wizard
+    const fetchWizardData = useCallback(async () => {
+        const supabase = createClient();
+        try {
+            // Proyectos filtrados por área del usuario
+            const { data: projects } = await supabase
+                .from('tbproyecto')
+                .select('id, titulo')
+                .eq('id_area_investigacion', userAreaId);
+            setProjectsList(projects || []);
+
+            // Estudiantes
+            const { data: students } = await supabase
+                .from('tbestudiante')
+                .select(`
+                    id,
+                    primer_nomb,
+                    segundo_nomb,
+                    primer_ape,
+                    segundo_ape,
+                    tbcarrera (nombre_carrera)
+                `)
+                .order('primer_ape', { ascending: true });
+
+            const mappedStudents = (students || []).map(s => ({
+                id: s.id,
+                nombreCompleto: [s.primer_nomb, s.segundo_nomb, s.primer_ape, s.segundo_ape]
+                    .filter(Boolean)
+                    .join(' '),
+                nombreSimple: `${s.primer_nomb || ''} ${s.primer_ape || ''}`.trim(),
+                carrera: s.tbcarrera?.nombre_carrera || ''
+            }));
+            setStudentsList(mappedStudents);
+
+            // Áreas
+            const { data: areas } = await supabase.from('tbareainvestigacion').select('*');
+            setAreasInvestigacion(areas || []);
+        } catch (error) {
+            console.error('Error loading wizard data:', error);
+        }
+    }, [userAreaId]);
+
+    useEffect(() => {
+        fetchGroups();
+        fetchUserArea();
+    }, [fetchGroups, fetchUserArea]);
+
+    useEffect(() => {
+        if (isWizardOpen && userAreaId) {
+            fetchWizardData();
+        }
+    }, [isWizardOpen, userAreaId, fetchWizardData]);
+
+    // Generar nombre de grupo automáticamente cuando cambian las dependencias
+    useEffect(() => {
+        if (wizardData.selectedStudents.length > 0 && wizardData.id_proyecto && wizardData.periodo) {
+            const cedulas = wizardData.selectedStudents.map(s => s.id).join('-');
+            const generatedName = `${cedulas}-${wizardData.id_proyecto}-${wizardData.periodo}`;
+            setWizardData(prev => ({ ...prev, nombreGrupo: generatedName }));
+        } else {
+            setWizardData(prev => ({ ...prev, nombreGrupo: '' }));
+        }
+    }, [wizardData.selectedStudents, wizardData.id_proyecto, wizardData.periodo]);
+
+    const handleNewClick = () => {
+        if (!userAreaId) {
+            alert('No puedes crear grupos sin un área asignada.');
+            return;
+        }
+        setIsWizardOpen(true);
+        setCurrentStep(1);
+        setEditingGroupKey(null);
+        setWizardData({
+            periodo: '',
+            id_proyecto: null,
+            selectedStudents: [],
+            nombreGrupo: ''
+        });
+        setSelectedRowKey(null);
+        setOriginalGroupKey(null);
+    };
+
+    const handleEditClick = () => {
+        if (!selectedRowKey) {
+            alert('Selecciona un grupo para modificar.');
+            return;
+        }
+
+        const groupToEdit = groups.find(g => g.compositeKey === selectedRowKey);
+        if (!groupToEdit) {
+            alert('Grupo no encontrado.');
+            return;
+        }
+
+        if (groupToEdit.id_area_investigacion !== userAreaId) {
+            alert('No tienes permiso para modificar grupos de otras áreas.');
+            return;
+        }
+
+        // Cargar datos del grupo para edición
+        setEditingGroupKey(selectedRowKey);
+        setIsWizardOpen(true);
+        setCurrentStep(1);
+        
+        // Parsear la clave compuesta
+        const [cedula, idProyecto, periodo] = selectedRowKey.split('|');
+        
+        setOriginalGroupKey({
+            cedula_estudiante: cedula,
+            id_proyecto: parseInt(idProyecto),
+            periodo_academico: periodo
+        });
+        
+        // Para simplificar, cargamos el primer estudiante del grupo
+        const primeraCedula = groupToEdit.cedula_estudiante.split(',')[0]?.trim();
+        const primerEstudiante = groupToEdit.estudiante.split(',')[0]?.trim();
+        
+        setWizardData({
+            periodo: groupToEdit.periodo_academico || '',
+            id_proyecto: groupToEdit.id_proyecto,
+            selectedStudents: primeraCedula ? [{
+                id: primeraCedula,
+                nombreCompleto: primerEstudiante || 'Estudiante cargado',
+                carrera: ''
+            }] : [],
+            nombreGrupo: groupToEdit.nombre_grupo || ''
+        });
+    };
+
+    const handleDeleteClick = async () => {
+        if (!selectedRowKey) {
+            alert('Selecciona un grupo para eliminar.');
+            return;
+        }
+
+        const group = groups.find(g => g.compositeKey === selectedRowKey);
+        if (!group) {
+            alert('Grupo no encontrado.');
+            return;
+        }
+
+        if (group.id_area_investigacion !== userAreaId) {
+            alert('No tienes permiso para eliminar grupos de otras áreas.');
+            return;
+        }
+
+        if (window.confirm(`¿Estás seguro de eliminar el grupo "${group.nombre_grupo}"?`)) {
+            const supabase = createClient();
+            setLoading(true);
+            try {
+                // Eliminar exactamente el registro seleccionado por clave compuesta
+                const { error } = await supabase
+                    .from('tbgrupos')
+                    .delete()
+                    .eq('cedula_estudiante', group.cedula_estudiante)
+                    .eq('id_proyecto', group.id_proyecto)
+                    .eq('periodo_academico', group.periodo_academico);
+
+                if (error) throw error;
+
+                alert(`Grupo "${group.nombre_grupo}" eliminado correctamente`);
+                fetchGroups();
+                setSelectedRowKey(null);
+            } catch (error) {
+                console.error('Error al eliminar grupo:', error);
+                alert('Error al eliminar grupo: ' + (error.message || 'Error desconocido'));
+            } finally {
+                setLoading(false);
+            }
+        }
+    };
+
+    const handleWizardNext = () => {
+        // Validaciones por paso
+        if (currentStep === 1 && wizardData.selectedStudents.length === 0) {
+            alert('Debes seleccionar al menos un estudiante.');
+            return;
+        }
+        if (currentStep === 2 && !wizardData.id_proyecto) {
+            alert('Debes seleccionar un proyecto.');
+            return;
+        }
+        if (currentStep === 3 && !wizardData.periodo) {
+            alert('Debes ingresar el periodo académico.');
+            return;
+        }
+        if (currentStep < 4) {
+            setCurrentStep(currentStep + 1);
+        }
+    };
+
+    const handleWizardBack = () => {
+        if (currentStep > 1) {
+            setCurrentStep(currentStep - 1);
+        }
+    };
+
+    const handleWizardFinish = async () => {
+        if (!wizardData.selectedStudents.length || !wizardData.id_proyecto || !wizardData.periodo) {
+            alert('Faltan datos requeridos.');
+            return;
+        }
+
+        const supabase = createClient();
+        setLoading(true);
+
+        try {
+            // Obtener el ID del usuario actual
+            const { data: { user } } = await supabase.auth.getUser();
+            const userId = user?.id;
+
+            // Para edición: eliminar todos los registros del grupo anterior
+            if (editingGroupKey && originalGroupKey) {
+                // Eliminar por nombre_grupo original
+                const originalGroup = groups.find(g => g.compositeKey === editingGroupKey);
+                if (originalGroup) {
+                    const { error: deleteError } = await supabase
+                        .from('tbgrupos')
+                        .delete()
+                        .eq('nombre_grupo', originalGroup.nombre_grupo);
+
+                    if (deleteError) throw deleteError;
+                }
+            }
+
+            // Construir arreglo de inserts (uno por cada estudiante seleccionado)
+            const inserts = wizardData.selectedStudents.map(student => ({
+                cedula_estudiante: student.id,
+                id_proyecto: wizardData.id_proyecto,
+                periodo_academico: wizardData.periodo,
+                nombre_grupo: wizardData.nombreGrupo,
+                estado: 'En revisión',
+                created_by: userId
+            }));
+
+            const { error } = await supabase
+                .from('tbgrupos')
+                .insert(inserts);
+
+            if (error) throw error;
+
+            alert(editingGroupKey 
+                ? `Grupo "${wizardData.nombreGrupo}" actualizado exitosamente` 
+                : `Se creó el grupo "${wizardData.nombreGrupo}" con ${inserts.length} estudiante(s)`
+            );
+            
+            setIsWizardOpen(false);
+            setEditingGroupKey(null);
+            setOriginalGroupKey(null);
+            setSelectedRowKey(null);
+            fetchGroups();
+        } catch (error) {
+            console.error('Error al guardar grupos:', error);
+            alert('Error al guardar los grupos: ' + (error.message || 'Error desconocido'));
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const toggleStudentSelection = (student) => {
+        setWizardData(prev => {
+            const exists = prev.selectedStudents.some(s => s.id === student.id);
+            if (exists) {
+                return {
+                    ...prev,
+                    selectedStudents: prev.selectedStudents.filter(s => s.id !== student.id)
+                };
+            } else {
+                return {
+                    ...prev,
+                    selectedStudents: [...prev.selectedStudents, student]
+                };
+            }
+        });
+    };
+
+    // Filtrar grupos según término de búsqueda
+    const filteredGroups = groups.filter(group => 
+        group.nombre_grupo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        group.cedula_estudiante.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        group.estudiante.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        group.proyecto.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        group.periodo_academico.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    return (
+        <div className={`${styles.container} ${sidebarCollapsed ? styles.collapsed : ''}`}>
+            <Sidebar isCollapsed={sidebarCollapsed} onToggle={toggleSidebar} />
+
+            <main className={styles.mainContent}>
+                <header className={styles.header}>
+                    <h1>Módulo de Grupos</h1>
+                    <div className={styles.headerIcons}>
+                        <div className={styles.headerProfile} title={`Área: ${userAreaName}`}>
+                            <span style={{ marginRight: '10px', fontSize: '0.8rem', fontWeight: 'bold', color: '#1a56db' }}>
+                                {userAreaName}
+                            </span>
+                            <img src="/image/logo.png" alt="User Avatar" />
+                        </div>
+                    </div>
+                </header>
+
+                {!isWizardOpen ? (
+                    <div className={styles.card}>
+                        <div className={styles.searchBar}>
+                            <i className="bx bx-search"></i>
+                            <input
+                                type="text"
+                                placeholder="Buscar por grupo, estudiante, cédula, proyecto o período..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                disabled={loading}
+                            />
+                        </div>
+
+                        {loading ? (
+                            <div className={styles.loadingContainer}>
+                                <p>Cargando grupos...</p>
+                            </div>
+                        ) : (
+                            <div className={styles.dataTableContainer}>
+                                <table className={styles.dataTable}>
+                                    <thead>
+                                        <tr>
+                                            <th>Agrupación</th>
+                                            <th>Periodo</th>
+                                            <th>Cédula(s)</th>
+                                            <th>Estudiante(s)</th>
+                                            <th>Proyecto</th>
+                                            <th>Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredGroups.length === 0 ? (
+                                            <tr>
+                                                <td colSpan="6" style={{ textAlign: 'center', padding: '30px' }}>
+                                                    {searchTerm ? 'No se encontraron grupos con ese criterio' : 'No hay grupos registrados'}
+                                                </td>
+                                            </tr>
+                                        ) : (
+                                            filteredGroups.map(group => (
+                                                <tr
+                                                    key={group.compositeKey}
+                                                    className={selectedRowKey === group.compositeKey ? styles.selected : ''}
+                                                    onClick={() => setSelectedRowKey(group.compositeKey)}
+                                                    style={group.id_area_investigacion !== userAreaId ? { 
+                                                        opacity: 0.6, 
+                                                        backgroundColor: '#f9f9f9' 
+                                                    } : {}}
+                                                    title={`Haz clic para seleccionar el grupo: ${group.nombre_grupo}`}
+                                                >
+                                                    <td>{group.nombre_grupo}</td>
+                                                    <td>{group.periodo_academico}</td>
+                                                    <td>{group.cedula_estudiante}</td>
+                                                    <td>{group.estudiante}</td>
+                                                    <td>{group.proyecto}</td>
+                                                    <td>
+                                                        <span className={`${styles.statusBadge} ${
+                                                            group.estado === 'Activo' ? styles.statusActive :
+                                                            group.estado === 'En revisión' ? styles.statusReview :
+                                                            group.estado === 'Aprobado' ? styles.statusApproved :
+                                                            styles.statusInactive
+                                                        }`}>
+                                                            {group.estado}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+
+                        <div className={styles.actions}>
+                            <button 
+                                className={`${styles.button} ${styles.buttonSecondary}`} 
+                                onClick={handleNewClick}
+                                disabled={loading}
+                            >
+                                Nuevo
+                            </button>
+                            <button 
+                                className={`${styles.button} ${styles.buttonOutline}`} 
+                                onClick={handleEditClick}
+                                disabled={!selectedRowKey || loading}
+                            >
+                                Modificar
+                            </button>
+                            <button 
+                                className={`${styles.button} ${styles.buttonDanger}`} 
+                                onClick={handleDeleteClick}
+                                disabled={!selectedRowKey || loading}
+                            >
+                                Eliminar
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    <div className={styles.card}>
+                        <div className={styles.wizardContainer}>
+                            <div className={styles.wizardHeader}>
+                                <h2>{editingGroupKey ? 'Editar Grupo' : 'Registro de Grupo'}</h2>
+                                <div className={styles.wizardStepIndicator}>
+                                    Paso {currentStep} de 4: {
+                                        currentStep === 1 ? 'Seleccionar Estudiantes' :
+                                        currentStep === 2 ? 'Seleccionar Proyecto' :
+                                        currentStep === 3 ? 'Información General' :
+                                        'Resumen y Confirmación'
+                                    }
+                                </div>
+                            </div>
+
+                            {/* Paso 1: Seleccionar Estudiantes */}
+                            {currentStep === 1 && (
+                                <div className={styles.dataTableContainer}>
+                                    <div className={styles.selectionCounter}>
+                                        Estudiantes seleccionados: <strong>{wizardData.selectedStudents.length}</strong>
+                                    </div>
+                                    <table className={styles.dataTable}>
+                                        <thead>
+                                            <tr>
+                                                <th>Cédula</th>
+                                                <th>Nombre Completo</th>
+                                                <th>Carrera</th>
+                                                <th>Asignar</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {studentsList.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan="4" style={{ textAlign: 'center', padding: '20px' }}>
+                                                        No hay estudiantes disponibles
+                                                    </td>
+                                                </tr>
+                                            ) : (
+                                                studentsList.map(student => {
+                                                    const isSelected = wizardData.selectedStudents.some(s => s.id === student.id);
+                                                    return (
+                                                        <tr
+                                                            key={student.id}
+                                                            className={isSelected ? styles.selected : ''}
+                                                            onClick={() => toggleStudentSelection(student)}
+                                                            style={{ cursor: 'pointer' }}
+                                                        >
+                                                            <td>{student.id}</td>
+                                                            <td>{student.nombreCompleto}</td>
+                                                            <td>{student.carrera}</td>
+                                                            <td>
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={isSelected}
+                                                                    readOnly
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        toggleStudentSelection(student);
+                                                                    }}
+                                                                />
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+
+                            {/* Paso 2: Seleccionar Proyecto */}
+                            {currentStep === 2 && (
+                                <div className={styles.dataTableContainer}>
+                                    <table className={styles.dataTable}>
+                                        <thead>
+                                            <tr>
+                                                <th>Título del Proyecto</th>
+                                                <th>Seleccionar</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {projectsList.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan="2" style={{ textAlign: 'center', padding: '20px' }}>
+                                                        No hay proyectos disponibles en tu área
+                                                    </td>
+                                                </tr>
+                                            ) : (
+                                                projectsList.map(project => (
+                                                    <tr
+                                                        key={project.id}
+                                                        className={wizardData.id_proyecto === project.id ? styles.selected : ''}
+                                                        onClick={() => setWizardData({ ...wizardData, id_proyecto: project.id })}
+                                                        style={{ cursor: 'pointer' }}
+                                                    >
+                                                        <td>{project.titulo}</td>
+                                                        <td>
+                                                            <input
+                                                                type="radio"
+                                                                checked={wizardData.id_proyecto === project.id}
+                                                                readOnly
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+
+                            {/* Paso 3: Información General */}
+                            {currentStep === 3 && (
+                                <div className={styles.formContainer}>
+                                    <div className={styles.formGroup}>
+                                        <label>Área de investigación</label>
+                                        <input
+                                            type="text"
+                                            value={userAreaName}
+                                            readOnly
+                                            className={styles.readOnlyInput}
+                                        />
+                                    </div>
+
+                                    <div className={styles.formGroup}>
+                                        <label>Periodo Académico *</label>
+                                        <input
+                                            type="text"
+                                            placeholder="Ej: 1-2025, 2-2024"
+                                            value={wizardData.periodo}
+                                            onChange={(e) => setWizardData({ ...wizardData, periodo: e.target.value })}
+                                            className={styles.formInput}
+                                        />
+                                        <small>Formato: semestre-año (Ej: 1-2025)</small>
+                                    </div>
+
+                                    <div className={styles.formGroup}>
+                                        <label>Nombre del Grupo (generado automáticamente)</label>
+                                        <input
+                                            type="text"
+                                            value={wizardData.nombreGrupo || 'Se generará al completar los pasos anteriores'}
+                                            readOnly
+                                            className={styles.readOnlyInput}
+                                        />
+                                        <small>Formato: cédulas-idProyecto-período</small>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Paso 4: Resumen */}
+                            {currentStep === 4 && (
+                                <div className={styles.summaryContainer}>
+                                    <h3>Resumen del Registro</h3>
+                                    
+                                    <div className={styles.summaryGrid}>
+                                        <div className={styles.summaryItem}>
+                                            <strong>Área:</strong> {userAreaName}
+                                        </div>
+                                        <div className={styles.summaryItem}>
+                                            <strong>Periodo:</strong> {wizardData.periodo || '—'}
+                                        </div>
+                                        <div className={styles.summaryItem}>
+                                            <strong>Proyecto:</strong> {projectsList.find(p => p.id === wizardData.id_proyecto)?.titulo || '—'}
+                                        </div>
+                                        <div className={styles.summaryItem}>
+                                            <strong>Nombre del Grupo:</strong> {wizardData.nombreGrupo || '—'}
+                                        </div>
+                                    </div>
+
+                                    <div className={styles.summarySection}>
+                                        <h4>Estudiantes seleccionados ({wizardData.selectedStudents.length})</h4>
+                                        <ul className={styles.studentsList}>
+                                            {wizardData.selectedStudents.map(s => (
+                                                <li key={s.id}>
+                                                    <strong>{s.nombreCompleto}</strong> - Cédula: {s.id}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+
+                                    <div className={styles.summaryNote}>
+                                        <p><strong>Nota:</strong> Se creará un registro por cada estudiante seleccionado con el mismo nombre de grupo.</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className={styles.stepActions}>
+                                {currentStep > 1 && (
+                                    <button 
+                                        className={`${styles.button} ${styles.buttonOutline}`} 
+                                        onClick={handleWizardBack}
+                                        disabled={loading}
+                                    >
+                                        Atrás
+                                    </button>
+                                )}
+
+                                <button 
+                                    className={`${styles.button} ${styles.buttonOutline}`} 
+                                    onClick={() => {
+                                        setIsWizardOpen(false);
+                                        setEditingGroupKey(null);
+                                        setOriginalGroupKey(null);
+                                    }}
+                                    disabled={loading}
+                                >
+                                    Cancelar
+                                </button>
+
+                                {currentStep < 4 ? (
+                                    <button 
+                                        className={`${styles.button} ${styles.buttonSecondary}`} 
+                                        onClick={handleWizardNext}
+                                        disabled={loading}
+                                    >
+                                        Siguiente
+                                    </button>
+                                ) : (
+                                    <button 
+                                        className={`${styles.button} ${styles.buttonPrimary}`} 
+                                        onClick={handleWizardFinish}
+                                        disabled={loading}
+                                    >
+                                        {loading ? 'Guardando...' : editingGroupKey ? 'Actualizar Grupo' : 'Guardar Grupos'}
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </main>
+        </div>
+    );
+};
+
+export default ModuloGrupos;

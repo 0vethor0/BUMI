@@ -1,116 +1,133 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import styles from '../../../styles/ModuloProyectos.module.css';
 import PDFUploader from '../../../../components/logica_PDFdownload/PDFUploader';
-import LogoutButton from '@/components/logout-button';
+import Sidebar from '@/components/ui/Sidebar';
+
+
 
 const ModuloProyectos = () => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [projects, setProjects] = useState([]);
     const [selectedRowId, setSelectedRowId] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
+    const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    
+    // --- NUEVOS ESTADOS PARA EL ÁREA DEL USUARIO ---
+    const [userAreaId, setUserAreaId] = useState(null);
+    const [userAreaName, setUserAreaName] = useState('Cargando...');
     const [areasInvestigacion, setAreasInvestigacion] = useState([]);
 
     const [newRowData, setNewRowData] = useState({
-        idproyecto: '',
-        title: '',
-        objectiveGeneral: '',
-        objectivesSpecific: '',
-        type: '',
-        summary: '',
-        pdfUrl: '', // <-- URL del PDF en Cloudflare R2
+        id: '',
+        titulo: '',
+        obj_general: '',
+        objetivos_especificos: '',
+        tipo_investigacion: '',
+        resumen: '',
+        pdf_url: '',
         id_area_investigacion: ''
     });
 
-    const fetchAreas = useCallback(async () => {
+    // --- FUNCIÓN PARA OBTENER EL ÁREA DEL USUARIO LOGUEADO ---
+    const fetchUserArea = useCallback(async () => {
         const supabase = createClient();
         try {
-            const { data, error } = await supabase.from('tbareainvestigacion').select('*');
-            if (error) throw error;
-            setAreasInvestigacion(data);
-        } catch (error) {
-            console.error('Error fetching areas:', error);
+            // 1. Llamar a la función RPC para obtener el ID del área del admin
+            const { data: areaId, error: rpcError } = await supabase.rpc('get_user_area');
+
+            if (rpcError) throw rpcError;
+            
+            if (areaId === null) {
+                console.warn('El usuario no tiene un área asignada.');
+                setUserAreaName('Sin área asignada');
+                return;
+            }
+
+            setUserAreaId(areaId);
+
+            // 2. Obtener el nombre del área para mostrarlo en la UI
+            const { data: areaData, error: areaError } = await supabase
+                .from('tbareainvestigacion')
+                .select('nomb_area')
+                .eq('id', areaId)
+                .single();
+
+            if (areaError) throw areaError;
+            setUserAreaName(areaData?.nomb_area || 'Área no encontrada');
+
+        } catch (err) {
+            console.error('Error al obtener área del usuario:', err);
+            setUserAreaName('Error al cargar área');
         }
     }, []);
 
+    // Cargamos todas las áreas solo para visualización en la tabla/lista
+    const fetchAllAreas = useCallback(async () => {
+        const supabase = createClient();
+        const { data } = await supabase.from('tbareainvestigacion').select('id, nomb_area');
+        if (data) setAreasInvestigacion(data);
+    }, []);
+
     const fetchProjects = useCallback(async () => {
+        setLoading(true);
         const supabase = createClient();
         try {
             const { data, error } = await supabase
                 .from('tbproyecto')
-                .select('*');
+                .select(`*`);
             
             if (error) throw error;
 
             const mappedProjects = data.map(project => ({
-                idproyecto: project.id,
-                title: project.titulo,
-                objectiveGeneral: project.obj_general,
-                objectivesSpecific: project.objetivos_especificos,
-                summary: project.resumen,
-                type: project.tipo_investigacion,
-                authors: project.authors || 'TBD',
-                pdfUrl: project.pdf_Url || '',
-                id_area_investigacion: project.id_area_investigacion
+                ...project,
+                titulo: project.titulo || '',
+                resumen: project.resumen || '',
+                pdf_url: project.pdf_url || ''
             }));
+
             setProjects(mappedProjects);
             setSelectedRowId(null);
         } catch (error) {
             console.error('Error al cargar proyectos:', error);
-            alert('Error al cargar los proyectos');
+        } finally {
+            setLoading(false);
         }
     }, []);
 
     useEffect(() => {
         fetchProjects();
-        fetchAreas();
-    }, [fetchProjects, fetchAreas]);
+        fetchAllAreas(); 
+        fetchUserArea(); // Obtener el área del usuario al iniciar
+    }, [fetchProjects, fetchAllAreas, fetchUserArea]);
 
     const handlePdfUploadSuccess = (publicUrl) => {
-        setNewRowData(prev => ({ ...prev, pdfUrl: publicUrl }));
-        alert('¡PDF subido exitosamente a Cloudflare R2!');
+        setNewRowData(prev => ({ ...prev, pdf_url: publicUrl }));
+        alert('¡PDF subido exitosamente!');
     };
 
     const handleSearchClick = async () => {
         if (!searchTerm.trim()) {
-            alert('Por favor, ingrese un título para buscar.');
-            setProjects([]);
+            fetchProjects();
             return;
         }
+        setLoading(true);
         const supabase = createClient();
         try {
             const { data, error } = await supabase
                 .from('tbproyecto')
-                .select('*')
-                .ilike('titulo', `%${searchTerm}%`);
+                .select(`*`)
+                .or(`titulo.ilike.%${searchTerm}%,resumen.ilike.%${searchTerm}%,tipo_investigacion.ilike.%${searchTerm}%`);
 
             if (error) throw error;
-
-            if (data.length === 0) {
-                alert('No se encontró un proyecto con ese título.');
-                setProjects([]);
-            } else {
-                const mappedProjects = data.map(project => ({
-                    idproyecto: project.id,
-                    title: project.titulo,
-                    objectiveGeneral: project.obj_general,
-                    objectivesSpecific: project.objetivos_especificos,
-                    summary: project.resumen,
-                    type: project.tipo_investigacion,
-                    authors: project.authors || 'TBD',
-                    pdfUrl: project.pdf_Url || ''
-                }));
-                setProjects(mappedProjects);
-            }
-            setSelectedRowId(null);
+            setProjects(data);
         } catch (error) {
-            console.error('Error al buscar proyectos:', error);
-            alert('Error al buscar proyectos');
+            alert('Error al buscar proyectos: ' + error.message);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -119,14 +136,12 @@ const ModuloProyectos = () => {
         fetchProjects();
     };
 
-    const toggleSidebar = () => {
-        setSidebarCollapsed(!sidebarCollapsed);
-    };
+    const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed);
 
-    const handleProjectClick = (e, idproyecto) => {
+    const handleProjectClick = (e, id) => {
         e.stopPropagation();
         if (isEditing) return;
-        setSelectedRowId(idproyecto);
+        setSelectedRowId(id);
     };
 
     const handleNewClick = () => {
@@ -134,85 +149,89 @@ const ModuloProyectos = () => {
             alert('Termina o cancela la edición actual primero.');
             return;
         }
+
+        // Validación de seguridad: debe tener área asignada
+        if (!userAreaId) {
+            alert('No puedes crear proyectos porque no tienes un área de investigación asignada.');
+            return;
+        }
+
         setSelectedRowId('new-row');
         setIsEditing(true);
         setNewRowData({
-            idproyecto: '',
-            title: '',
-            objectiveGeneral: '',
-            objectivesSpecific: '',
-            type: '',
-            summary: '',
-            pdfUrl: '',
-            id_area_investigacion: ''
+            id: '',
+            titulo: '',
+            obj_general: '',
+            objetivos_especificos: '',
+            tipo_investigacion: '',
+            resumen: '',
+            pdf_url: '',
+            id_area_investigacion: userAreaId // Asignación automática
         });
     };
 
     const handleModifyClick = async () => {
         if (!isEditing) {
-            // Activar modo edición
             if (!selectedRowId) {
                 alert('Selecciona un proyecto para modificar.');
                 return;
             }
-            const project = projects.find(p => p.idproyecto === selectedRowId);
+            const project = projects.find(p => p.id === selectedRowId);
+
+            // SEGURIDAD: Solo permitir editar si el proyecto es del área del usuario
+            if (project.id_area_investigacion !== userAreaId) {
+                alert(`No tienes permiso para modificar este proyecto. Pertenece a el área: ${areasInvestigacion.find(a => a.id === project.id_area_investigacion)?.nomb_area || 'Otra'}`);
+                return;
+            }
+
             setIsEditing(true);
             setNewRowData({
-                idproyecto: project.idproyecto,
-                title: project.title,
-                objectiveGeneral: project.objectiveGeneral || '',
-                objectivesSpecific: project.objectivesSpecific || '',
-                type: project.type,
-                summary: project.summary,
-                pdfUrl: project.pdfUrl || '',
-                id_area_investigacion: project.id_area_investigacion || ''
+                ...project,
+                id_area_investigacion: project.id_area_investigacion
             });
             return;
         }
 
-        // GUARDAR (nuevo o actualización)
-        const requiredFields = ['title', 'objectiveGeneral', 'objectivesSpecific', 'type', 'summary', 'pdfUrl', 'id_area_investigacion'];
+        // Validación de campos
+        const requiredFields = ['titulo', 'obj_general', 'objetivos_especificos', 'tipo_investigacion', 'resumen', 'pdf_url'];
         const missing = requiredFields.find(field => !newRowData[field]?.toString().trim());
         if (missing) {
-            alert('Todos los campos son obligatorios, incluyendo el PDF y el Área de Investigación.');
+            alert(`El campo "${missing}" es obligatorio.`);
             return;
         }
 
         const supabase = createClient();
+        setLoading(true);
 
         try {
             const payload = {
-                titulo: newRowData.title,
-                obj_general: newRowData.objectiveGeneral,
-                objetivos_especificos: newRowData.objectivesSpecific,
-                resumen: newRowData.summary,
-                tipo_investigacion: newRowData.type,
-                pdf_Url: newRowData.pdfUrl,
-                id_area_investigacion: parseInt(newRowData.id_area_investigacion)
+                titulo: newRowData.titulo,
+                obj_general: newRowData.obj_general,
+                objetivos_especificos: newRowData.objetivos_especificos,
+                resumen: newRowData.resumen,
+                tipo_investigacion: newRowData.tipo_investigacion,
+                pdf_url: newRowData.pdf_url,
+                id_area_investigacion: userAreaId // Forzar el área del usuario logueado
             };
 
+            let error;
             if (selectedRowId === 'new-row') {
-                const { error } = await supabase
-                    .from('tbproyecto')
-                    .insert([payload]);
-                if (error) throw error;
-                alert('Proyecto creado con éxito');
+                ({ error } = await supabase.from('tbproyecto').insert([payload]));
             } else {
-                const { error } = await supabase
-                    .from('tbproyecto')
-                    .update(payload)
-                    .eq('id', selectedRowId);
-                if (error) throw error;
-                alert('Proyecto actualizado con éxito');
+                ({ error } = await supabase.from('tbproyecto').update(payload).eq('id', selectedRowId));
             }
 
+            if (error) throw error;
+
+            alert('Operación exitosa');
             await fetchProjects();
             setIsEditing(false);
             setSelectedRowId(null);
-            setNewRowData({ idproyecto: '', title: '', objectiveGeneral: '', objectivesSpecific: '', type: '', summary: '', pdfUrl: '', id_area_investigacion: '' });
         } catch (error) {
-            console.error('Error al guardar proyecto:', error);
-            alert('Error al guardar el proyecto: ' + error.message);
+            console.error('Error al guardar:', error);
+            alert('Error: ' + (error.message || 'No tienes permisos para realizar esta acción.'));
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -220,7 +239,6 @@ const ModuloProyectos = () => {
         if (isEditing) {
             setIsEditing(false);
             setSelectedRowId(null);
-            setNewRowData({ idproyecto: '', title: '', objectiveGeneral: '', objectivesSpecific: '', type: '', summary: '', pdfUrl: '', id_area_investigacion: '' });
             return;
         }
 
@@ -229,22 +247,25 @@ const ModuloProyectos = () => {
             return;
         }
 
+        const project = projects.find(p => p.id === selectedRowId);
+        if (project.id_area_investigacion !== userAreaId) {
+            alert('No tienes permiso para eliminar proyectos de otras áreas.');
+            return;
+        }
+
         if (window.confirm('¿Estás seguro de eliminar este proyecto?')) {
             const supabase = createClient();
+            setLoading(true);
             try {
-                const { error } = await supabase
-                    .from('tbproyecto')
-                    .delete()
-                    .eq('id', selectedRowId);
-                
+                const { error } = await supabase.from('tbproyecto').delete().eq('id', selectedRowId);
                 if (error) throw error;
-
-                fetchProjects();
+                await fetchProjects();
                 setSelectedRowId(null);
                 alert('Proyecto eliminado');
             } catch (error) {
-                console.error('Error al eliminar:', error);
-                alert('Error al eliminar');
+                alert('Error al eliminar: ' + error.message);
+            } finally {
+                setLoading(false);
             }
         }
     };
@@ -254,8 +275,6 @@ const ModuloProyectos = () => {
         setNewRowData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleSearchChange = (e) => setSearchTerm(e.target.value);
-
     const getButtonText = (type) => {
         if (isEditing) return type === 'modify' ? 'Guardar' : 'Cancelar';
         return type === 'modify' ? 'Modificar' : 'Eliminar';
@@ -263,156 +282,130 @@ const ModuloProyectos = () => {
 
     return (
         <div className={`${styles.container} ${sidebarCollapsed ? styles.collapsed : ''}`}>
-            {/* Sidebar */}
-            <aside className={styles.sidebar}>
-                <div className={styles.sidebarHeader}>
-                    <div className={styles.logo} onClick={toggleSidebar}><i className="fas fa-bars"></i></div>
-                    <span className={styles.appName}>Bumi Unefa</span>
-                </div>
-                <nav className={styles.sidebarNav}>
-                    <ul>
-                        <li><a href="#"><i className="fas fa-chart-line"></i> <span>Dashboard</span></a></li>
-                        <li><Link href="/protected/dashboard/moduloTutores"><i className="fas fa-chalkboard-teacher"></i> <span>Tutores</span></Link></li>
-                        <li><Link href="/protected/dashboard/moduloEstudiantes"><i className="fas fa-user-graduate"></i> <span>Estudiantes</span></Link></li>
-                        <li><a href="#"><i className="fas fa-users"></i> <span>Grupos</span></a></li>
-                        <li className={styles.active}><a href="#"><i className="fas fa-project-diagram"></i> <span>Proyectos</span></a></li>
-                        <li><a href="#"><i className="fas fa-clipboard-list"></i> <span>Estado de Proyecto</span></a></li>
-                    </ul>
-                    <ul className={styles.logout}>
-                        <li><a href="#"><i className="fas fa-cog"></i> <span>Configuración</span></a></li>
-                        <li>
-                            <i className="fas fa-sign-out-alt"></i> <span>Salir</span>
-                            <LogoutButton />
-                        </li>
-                    </ul>
-                </nav>
-            </aside>
+            {/* Sidebar (Sin cambios significativos) */}
+            <Sidebar 
+                isCollapsed={sidebarCollapsed} 
+                onToggle={toggleSidebar} 
+            />
 
             <main className={styles.mainContent}>
                 <header className={styles.header}>
                     <h1>Modulo de Proyectos</h1>
                     <div className={styles.headerIcons}>
-                        <button className={styles.iconButton}><i className="fas fa-ellipsis-v"></i></button>
-                        <button className={styles.iconButton}><i className="fas fa-bell"></i></button>
-                        <div className={styles.headerProfile}><img src="/image/logo.png" alt="User Avatar" /></div>
+                        <div className={styles.headerProfile} title={`Área: ${userAreaName}`}>
+                            <span className="mr-2 text-sm font-bold text-blue-700">{userAreaName}</span>
+                            <img src="/image/logo.png" alt="User" />
+                        </div>
                     </div>
                 </header>
 
-                {/* LISTADO DE PROYECTOS */}
                 {!isEditing && (
                     <div className={styles.card}>
                         <div className={styles.searchBar}>
-                            <i className="fas fa-search"></i>
-                            <input type="text" placeholder="Buscar por título..." value={searchTerm} onChange={handleSearchChange} />
-                            <button className={`${styles.button} ${styles.buttonSecondary}`} onClick={handleSearchClick}>Buscar</button>
-                            <button className={`${styles.button} ${styles.buttonSecondary}`} onClick={handleResetSearch}>Restablecer</button>
+                            <input 
+                                type="text" 
+                                placeholder="Buscar por título o resumen..." 
+                                value={searchTerm} 
+                                onChange={(e) => setSearchTerm(e.target.value)} 
+                            />
+                            <button className={styles.button} onClick={handleSearchClick} disabled={loading}>Buscar</button>
+                            <button className={styles.button} onClick={handleResetSearch}>Restablecer</button>
                         </div>
 
-                        <div className={styles.projectList}>
-                            {projects.map(project => (
-                                <div
-                                    key={project.idproyecto}
-                                    className={`${styles.projectItem} ${selectedRowId === project.idproyecto ? styles.selected : ''}`}
-                                    onClick={(e) => handleProjectClick(e, project.idproyecto)}
-                                >
-                                    <div className={styles.projectContent}>
-                                        <strong>{project.title}</strong>{' '}
-                                        {project.pdfUrl && (
-                                            <a href={project.pdfUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline text-sm">
-                                                VER PDF
-                                            </a>
-                                        )}
-                                        <p>{project.summary}</p>
-                                        <span className={styles.filter}>Filtro por: {project.type}</span>
-                                        <p>{project.authors}</p>
+                        {loading ? (
+                            <p className="text-center py-8">Cargando...</p>
+                        ) : (
+                            <div className={styles.projectList}>
+                                {projects.map(project => (
+                                    <div
+                                        key={project.id}
+                                        className={`${styles.projectItem} ${selectedRowId === project.id ? styles.selected : ''}`}
+                                        onClick={(e) => handleProjectClick(e, project.id)}
+                                    >
+                                        <div className={styles.projectContent}>
+                                            <strong>{project.titulo}</strong>
+                                            <p className="text-sm text-gray-600">
+                                                Área: {areasInvestigacion.find(a => a.id === project.id_area_investigacion)?.nomb_area || 'Cargando...'}
+                                            </p>
+                                            <span className={styles.filter}>{project.tipo_investigacion}</span>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                        )}
 
                         <div className={styles.actions}>
-                            <button className={`${styles.button} ${styles.buttonSecondary}`} onClick={handleNewClick} disabled={isEditing}>Nuevo</button>
-                            <button className={`${styles.button} ${styles.buttonOutline}`} onClick={handleModifyClick}>
-                                {getButtonText('modify')}
-                            </button>
-                            <button className={`${styles.button} ${styles.buttonDanger}`} onClick={handleDeleteClick}>
-                                {getButtonText('delete')}
-                            </button>
+                            <button className={styles.button} onClick={handleNewClick} disabled={loading}>Nuevo</button>
+                            <button className={styles.button} onClick={handleModifyClick} disabled={loading}>{getButtonText('modify')}</button>
+                            <button className={styles.button} onClick={handleDeleteClick} disabled={loading}>{getButtonText('delete')}</button>
                         </div>
                     </div>
                 )}
 
-                {/* FORMULARIO DE EDICIÓN / CREACIÓN */}
                 {isEditing && (
                     <div className={styles.fullScreenForm}>
                         <header className={styles.header}>
-                            <h1>{selectedRowId === 'new-row' ? 'Registro de Nuevo Proyecto' : 'Modificar Proyecto'}</h1>
-                            <button className={styles.iconButton} onClick={handleDeleteClick}>
-                                <i className="fas fa-times"></i>
-                            </button>
+                            <h1>{selectedRowId === 'new-row' ? 'Nuevo Proyecto' : 'Editar Proyecto'}</h1>
                         </header>
 
                         <div className={styles.formCard}>
                             <div className={styles.formContainer}>
                                 <div className={styles.formColumn}>
                                     <div className={styles.formGroup}>
-                                        <label>Título</label>
-                                        <input type="text" name="title" value={newRowData.title} onChange={handleInputChange} placeholder="Ingrese el Título del Proyecto" />
+                                        <label>Título *</label>
+                                        <input type="text" name="titulo" value={newRowData.titulo} onChange={handleInputChange} />
                                     </div>
                                     <div className={styles.formGroup}>
-                                        <label>Objetivo General</label>
-                                        <input type="text" name="objectiveGeneral" value={newRowData.objectiveGeneral} onChange={handleInputChange} placeholder="Ingrese el Objetivo General" />
-                                    </div>
-                                    <div className={styles.formGroup}>
-                                        <label>Objetivos Específicos</label>
-                                        <textarea name="objectivesSpecific" value={newRowData.objectivesSpecific} onChange={handleInputChange} rows="6" placeholder="Enumere los objetivos específicos..." />
+                                        <label>Objetivo General *</label>
+                                        <textarea name="obj_general" value={newRowData.obj_general} onChange={handleInputChange} rows="3" />
                                     </div>
                                 </div>
 
                                 <div className={styles.formColumn}>
                                     <div className={styles.formGroup}>
-                                        <label>Tipo de Investigación</label>
-                                        <input type="text" name="type" value={newRowData.type} onChange={handleInputChange} placeholder="Ej: Cuantitativo, Cualitativo..." />
+                                        <label>Tipo de Investigación *</label>
+                                        <input type="text" name="tipo_investigacion" value={newRowData.tipo_investigacion} onChange={handleInputChange} />
                                     </div>
+
+                                    {/* --- INPUT READONLY PARA EL ÁREA --- */}
                                     <div className={styles.formGroup}>
-                                        <label>Área de Investigación</label>
-                                        <select
-                                            className="form-select"
-                                            name="id_area_investigacion"
-                                            value={newRowData.id_area_investigacion}
-                                            onChange={handleInputChange}
-                                            style={{ width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid #ccc' }}
-                                        >
-                                            <option value="">Seleccione Área</option>
-                                            {areasInvestigacion.map(area => (
-                                                <option key={area.id} value={area.id}>{area.nombre}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className={styles.formGroup}>
-                                        <label>Resumen</label>
-                                        <textarea name="summary" value={newRowData.summary} onChange={handleInputChange} rows="6" placeholder="Resumen del proyecto..." />
+                                        <label>Área de Investigación (Asignada automáticamente)</label>
+                                        <input 
+                                            type="text" 
+                                            value={userAreaName} 
+                                            readOnly 
+                                            style={{ backgroundColor: '#f3f4f6', cursor: 'not-allowed' }}
+                                        />
+                                        <input type="hidden" name="id_area_investigacion" value={userAreaId || ''} />
                                     </div>
 
                                     <div className={styles.formGroup}>
-                                        <label>Documento PDF (Obligatorio)</label>
+                                        <label>Documento PDF *</label>
                                         <PDFUploader onUploadSuccess={handlePdfUploadSuccess} />
-
-                                        {newRowData.pdfUrl && (
-                                            <div className="mt-4 p-4 bg-green-50 border border-green-300 rounded">
-                                                <p className="text-green-800 font-medium">PDF subido correctamente</p>
-                                                <a href={newRowData.pdfUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline text-sm">
-                                                    Abrir PDF en nueva pestaña
-                                                </a>
-                                            </div>
-                                        )}
+                                        {newRowData.pdf_url && <p className="text-xs text-green-600">PDF listo para guardar</p>}
+                                        {/* 
+                                         * 2025-06-11 – Comentado temporalmente para evitar la carga automática del PDF
+                                         * en el formulario de edición.  
+                                         * Motivo:  
+                                         * - Puede ralentizar la UI si el archivo es pesado.  
+                                         * - Algunos navegadores bloquean iframes locales por política de seguridad.  
+                                         * - Se prefiere que el usuario decida visualizarlo con un botón “Ver PDF”
+                                         *   o mediante un enlace que abra en nueva pestaña.
+                                         */}
+                                        {/* <iframe src={newRowData.pdf_url} frameborder="0" style={{ width: '100%', height: '500px' }}></iframe> */}
+                                        
                                     </div>
                                 </div>
                             </div>
 
-                            <button className={styles.saveButton} onClick={handleModifyClick}>
-                                {getButtonText('modify')}
-                            </button>
+                            <div className="flex gap-4 mt-6">
+                                <button className={styles.saveButton} onClick={handleModifyClick} disabled={loading}>
+                                    {loading ? 'Guardando...' : 'Guardar Proyecto'}
+                                </button>
+                                <button className={styles.button} onClick={() => { setIsEditing(false); setSelectedRowId(null); }}>
+                                    Cancelar
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}
