@@ -81,7 +81,7 @@ const PaginaPrincipal = () => {
                             <h3>Describe lo que necesitas Buscar</h3>
                             <p>
                                 Escribe en el buscador lo que deseas encontrar, puedes utilizar
-                                la herramientas de "búsqueda avanzada" para filtrar los
+                                la herramientas de búsqueda avanzada para filtrar los
                                 resultados más específicos.
                             </p>
                         </div>
@@ -180,10 +180,10 @@ const PaginaPrincipal = () => {
                             <div className="info-block-circle"></div>
                             <h4>Ing. Maria Cabrera</h4>
                             <p>
-                                "La universidad carece de un sistema que recopile todos los
+                                La universidad carece de un sistema que recopile todos los
                                 trabajos hechos por los estudiantes. Y a la hora de la verdad,
                                 no estamos capacitados, para responder a una emergencia de forma
-                                eficiente"
+                                eficiente
                             </p>
                         </div>
 
@@ -191,10 +191,10 @@ const PaginaPrincipal = () => {
                             <div className="info-block-circle"></div>
                             <h4>Lic. Nayibe</h4>
                             <p>
-                                "Es esencial un sistema de este tipo. Porque muchas veces cuando
+                                Es esencial un sistema de este tipo. Porque muchas veces cuando
                                 buscamos un antecedente, no es de interés leer todo el trabajo,
                                 en cambio, lo de interés radica en los datos puntuales como: el
-                                título, los objetivos, el resumen, entre otros".
+                                título, los objetivos, el resumen, entre otros.
                             </p>
                         </div>
 
@@ -202,9 +202,9 @@ const PaginaPrincipal = () => {
                             <div className="info-block-circle"></div>
                             <h4>Doc. Betty Juarez</h4>
                             <p>
-                                "Un sistema para llevar el registro de proyectos de
+                                Un sistema para llevar el registro de proyectos de
                                 investigación, son muy útil para el proceso de consulta por
-                                parte de cualquier persona adentro y fuera de la universidad".
+                                parte de cualquier persona adentro y fuera de la universidad.
                             </p>
                         </div>
                     </div>
@@ -308,8 +308,8 @@ const PaginaPrincipal = () => {
 
                 <div className="footer-bottom">
                     <p>
-                        &copy; copyright 2025. Elaborado por el 6to semestre de Ing de
-                        Sistemas 1-2025
+                        copyright 2025. Elaborado por el 7to semestre de Ing de
+                        Sistemas 2-2025
                     </p>
                 </div>
             </footer>

@@ -10,7 +10,7 @@ import { createClient } from '@/lib/supabase/client'
 
 
 
-export function LoginForm({}) {
+export default function LoginForm({}) {
     const [isRegisterActive, setIsRegisterActive] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');

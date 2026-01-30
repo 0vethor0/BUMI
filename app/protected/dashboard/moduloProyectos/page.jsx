@@ -6,8 +6,6 @@ import styles from '../../../styles/ModuloProyectos.module.css';
 import PDFUploader from '../../../../components/logica_PDFdownload/PDFUploader';
 import Sidebar from '@/components/ui/Sidebar';
 
-
-
 const ModuloProyectos = () => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [projects, setProjects] = useState([]);
@@ -109,7 +107,7 @@ const ModuloProyectos = () => {
         alert('¡PDF subido exitosamente!');
     };
 
-    const handleSearchClick = async () => {
+    const handleSearchClick = async () => { // funcion para buscar proyectos por titulo, resumen o tipo de investigacion
         if (!searchTerm.trim()) {
             fetchProjects();
             return;
@@ -131,20 +129,20 @@ const ModuloProyectos = () => {
         }
     };
 
-    const handleResetSearch = () => {
+    const handleResetSearch = () => {// funcion para limpiar el input de busqueda
         setSearchTerm('');
         fetchProjects();
     };
 
     const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed);
 
-    const handleProjectClick = (e, id) => {
+    const handleProjectClick = (e, id) => {// funcion para seleccionar un proyecto
         e.stopPropagation();
         if (isEditing) return;
         setSelectedRowId(id);
     };
 
-    const handleNewClick = () => {
+    const handleNewClick = () => {// funcion para crear un nuevo proyecto
         if (isEditing) {
             alert('Termina o cancela la edición actual primero.');
             return;
@@ -168,6 +166,7 @@ const ModuloProyectos = () => {
             pdf_url: '',
             id_area_investigacion: userAreaId // Asignación automática
         });
+        
     };
 
     const handleModifyClick = async () => {
@@ -191,9 +190,10 @@ const ModuloProyectos = () => {
             });
             return;
         }
+        
 
         // Validación de campos
-        const requiredFields = ['titulo', 'obj_general', 'objetivos_especificos', 'tipo_investigacion', 'resumen', 'pdf_url'];
+        const requiredFields = ['titulo'];
         const missing = requiredFields.find(field => !newRowData[field]?.toString().trim());
         if (missing) {
             alert(`El campo "${missing}" es obligatorio.`);
@@ -328,6 +328,16 @@ const ModuloProyectos = () => {
                                                 Área: {areasInvestigacion.find(a => a.id === project.id_area_investigacion)?.nomb_area || 'Cargando...'}
                                             </p>
                                             <span className={styles.filter}>{project.tipo_investigacion}</span>
+                                            {project.pdf_url && (
+                                                <a 
+                                                    href={project.pdf_url} 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer" 
+                                                    className="text-blue-600 underline text-sm ml-4"
+                                                >
+                                                    Ver PDF
+                                                </a>
+                                            )}
                                         </div>
                                     </div>
                                 ))}

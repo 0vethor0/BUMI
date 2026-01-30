@@ -327,20 +327,48 @@ const ModuloGrupos = () => {
             periodo_academico: periodo
         });
         
-        // Para simplificar, cargamos el primer estudiante del grupo
-        const primeraCedula = groupToEdit.cedula_estudiante.split(',')[0]?.trim();
-        const primerEstudiante = groupToEdit.estudiante.split(',')[0]?.trim();
-        
-        setWizardData({
-            periodo: groupToEdit.periodo_academico || '',
-            id_proyecto: groupToEdit.id_proyecto,
-            selectedStudents: primeraCedula ? [{
-                id: primeraCedula,
-                nombreCompleto: primerEstudiante || 'Estudiante cargado',
-                carrera: ''
-            }] : [],
-            nombreGrupo: groupToEdit.nombre_grupo || ''
-        });
+        (async () => {
+            try {
+                const supabase = createClient();
+                const { data: grupoRows } = await supabase
+                    .from('tbgrupos')
+                    .select('cedula_estudiante')
+                    .eq('nombre_grupo', groupToEdit.nombre_grupo)
+                    .eq('id_proyecto', groupToEdit.id_proyecto)
+                    .eq('periodo_academico', groupToEdit.periodo_academico);
+
+                const cedulas = (grupoRows || []).map(r => r.cedula_estudiante).filter(Boolean);
+
+                let selected = [];
+                if (cedulas.length > 0) {
+                    const { data: estudiantes } = await supabase
+                        .from('tbestudiante')
+                        .select('id, primer_nomb, segundo_nomb, primer_ape, segundo_ape, tbcarrera (nombre_carrera)')
+                        .in('id', cedulas);
+
+                    selected = (estudiantes || []).map(s => ({
+                        id: s.id,
+                        nombreCompleto: [s.primer_nomb, s.segundo_nomb, s.primer_ape, s.segundo_ape].filter(Boolean).join(' '),
+                        nombreSimple: `${s.primer_nomb || ''} ${s.primer_ape || ''}`.trim(),
+                        carrera: s.tbcarrera?.nombre_carrera || ''
+                    }));
+                }
+
+                setWizardData({
+                    periodo: groupToEdit.periodo_academico || '',
+                    id_proyecto: groupToEdit.id_proyecto,
+                    selectedStudents: selected,
+                    nombreGrupo: groupToEdit.nombre_grupo || ''
+                });
+            } catch (e) {
+                setWizardData({
+                    periodo: groupToEdit.periodo_academico || '',
+                    id_proyecto: groupToEdit.id_proyecto,
+                    selectedStudents: [],
+                    nombreGrupo: groupToEdit.nombre_grupo || ''
+                });
+            }
+        })();
     };
 
     const handleDeleteClick = async () => {
@@ -364,11 +392,10 @@ const ModuloGrupos = () => {
             const supabase = createClient();
             setLoading(true);
             try {
-                // Eliminar exactamente el registro seleccionado por clave compuesta
                 const { error } = await supabase
                     .from('tbgrupos')
                     .delete()
-                    .eq('cedula_estudiante', group.cedula_estudiante)
+                    .eq('nombre_grupo', group.nombre_grupo)
                     .eq('id_proyecto', group.id_proyecto)
                     .eq('periodo_academico', group.periodo_academico);
 
