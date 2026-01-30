@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/client';
 import styles from '../styles/BuscadorPrincipal.module.css';
+import { listProjectsAction, searchProjectsAction } from '@/app/protected/actions';
 
 const BuscadorPrincipal = () => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -11,24 +11,17 @@ const BuscadorPrincipal = () => {
     const [showMoreYears, setShowMoreYears] = useState(false);
 
     const fetchProjects = useCallback(async () => {
-        const supabase = createClient();
         try {
-            const { data, error } = await supabase
-                .from('tbproyecto')
-                .select('*');
-            
-            if (error) throw error;
-
-            const mappedProjects = data.map(project => ({
+            const data = await listProjectsAction();
+            const mappedProjects = (data || []).map(project => ({
                 idproyecto: project.id,
                 title: project.titulo,
                 objectiveGeneral: project.obj_general,
                 summary: project.resumen,
                 type: project.tipo_investigacion,
-                pdf_url: project.pdf_url || ''  // ← Agregado
+                pdf_url: project.pdf_url || '',
             }));
             setProjects(mappedProjects);
-            console.log('Proyectos cargados:', mappedProjects);
         } catch (error) {
             console.error('Error al cargar proyectos:', error);
             alert('Error al cargar los proyectos');
@@ -45,16 +38,9 @@ const BuscadorPrincipal = () => {
             setProjects([]);
             return;
         }
-        const supabase = createClient();
         try {
-            const { data, error } = await supabase
-                .from('tbproyecto')
-                .select('*')
-                .ilike('titulo', `%${searchTerm}%`);
-
-            if (error) throw error;
-
-            if (data.length === 0) {
+            const data = await searchProjectsAction(searchTerm);
+            if (!data || data.length === 0) {
                 alert('No se encontró un proyecto con ese título.');
                 setProjects([]);
             } else {
@@ -64,10 +50,9 @@ const BuscadorPrincipal = () => {
                     objectiveGeneral: project.obj_general,
                     summary: project.resumen,
                     type: project.tipo_investigacion,
-                    pdf_url: project.pdf_url || ''  // ← Agregado
+                    pdf_url: project.pdf_url || '',
                 }));
                 setProjects(mappedProjects);
-                console.log('Resultados de búsqueda:', mappedProjects);
             }
         } catch (error) {
             console.error('Error al buscar proyectos:', error);

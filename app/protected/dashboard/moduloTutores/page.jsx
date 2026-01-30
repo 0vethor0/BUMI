@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 
-import { createClient } from '@/lib/supabase/client';
 import styles from '../../../styles/ModuloTutores.module.css';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/ui/Sidebar';
+import { listTutorsAction, searchTutorsAction, saveTutorAction, deleteTutorAction } from '@/app/protected/actions';
 
 
 
@@ -26,33 +26,13 @@ const ModuloTutores = () => {
     const [searchTerm, setSearchTerm] = useState('');
 
     const fetchTutors = useCallback(async () => {
-        const supabase = createClient();
         try {
-            const { data, error } = await supabase
-                .from('tbtutor')
-                .select(`
-                    cedula_tutor,
-                    created_at,
-                    primer_nomb,
-                    segundo_nomb,
-                    primer_ape,
-                    segundo_ape
-                `);
-            
-            if (error) throw error;
-
-            const mappedTutors = data.map(tutor => ({
-                id: tutor.cedula_tutor,
-                cedula: tutor.cedula_tutor,
-                firstName: [tutor.primer_nomb, tutor.segundo_nomb].filter(Boolean).join(' '),
-                lastName: [tutor.primer_ape, tutor.segundo_ape].filter(Boolean).join(' ')
-            }));
-
+            const mappedTutors = await listTutorsAction();
             setTutors(mappedTutors);
             setSelectedRowId(null);
         } catch (error) {
             console.error('Error al cargar tutores:', error);
-            alert('Error al cargar los tutores: ' + error.message);
+            alert('Error al cargar los tutores: ' + (error.message || 'Error'));
         }
     }, []);
 
@@ -66,41 +46,13 @@ const ModuloTutores = () => {
             return;
         }
 
-        const supabase = createClient();
         try {
-            const { data, error } = await supabase
-                .from('tbtutor')
-                .select(`
-                    cedula_tutor,
-                    created_at,
-                    primer_nomb,
-                    segundo_nomb,
-                    primer_ape,
-                    segundo_ape,
-                `)
-                .or(`
-                    cedula_tutor.ilike.%${searchTerm}%,
-                    primer_nomb.ilike.%${searchTerm}%,
-                    segundo_nomb.ilike.%${searchTerm}%,
-                    primer_ape.ilike.%${searchTerm}%,
-                    segundo_ape.ilike.%${searchTerm}%
-                `);
-
-            if (error) throw error;
-
-            const mappedTutors = data.map(tutor => ({
-                id: tutor.cedula_tutor,
-                cedula: tutor.cedula_tutor,
-                firstName: [tutor.primer_nomb, tutor.segundo_nomb].filter(Boolean).join(' '),
-                lastName: [tutor.primer_ape, tutor.segundo_ape].filter(Boolean).join(' '),
-                
-            }));
-
+            const mappedTutors = await searchTutorsAction(searchTerm);
             setTutors(mappedTutors);
             setSelectedRowId(null);
         } catch (error) {
             console.error('Error al buscar tutores:', error);
-            alert('Error al buscar tutores: ' + error.message);
+            alert('Error al buscar tutores: ' + (error.message || 'Error'));
         }
     };
 
@@ -142,8 +94,6 @@ const ModuloTutores = () => {
             return;
         }
 
-        const supabase = createClient();
-
         if (!isEditing) {
             // Entrar en modo edición
             setIsEditing(true);
@@ -177,22 +127,7 @@ const ModuloTutores = () => {
                     
                 };
 
-                let error;
-
-                if (selectedRowId === 'new-row') {
-                    // Crear nuevo tutor
-                    ({ error } = await supabase
-                        .from('tbtutor')
-                        .insert([{ ...payload, cedula_tutor: newRowData.cedula_tutor }]));
-                } else {
-                    // Actualizar tutor existente
-                    ({ error } = await supabase
-                        .from('tbtutor')
-                        .update(payload)
-                        .eq('cedula_tutor', selectedRowId));
-                }
-
-                if (error) throw error;
+                await saveTutorAction(selectedRowId, { ...payload, cedula_tutor: newRowData.cedula_tutor });
 
                 alert(selectedRowId === 'new-row' 
                     ? 'Tutor creado con éxito' 
@@ -227,21 +162,15 @@ const ModuloTutores = () => {
             });
         } else {
             if (window.confirm('¿Estás seguro de que quieres eliminar la fila seleccionada?')) {
-                const supabase = createClient();
                 try {
-                    const { error } = await supabase
-                        .from('tbtutor')
-                        .delete()
-                        .eq('cedula_tutor', selectedRowId);
-                    
-                    if (error) throw error;
+                    await deleteTutorAction(selectedRowId);
                     
                     await fetchTutors();
                     setSelectedRowId(null);
                     alert('Tutor eliminado.');
                 } catch (error) {
                     console.error('Error al eliminar tutor:', error);
-                    alert('Error al eliminar el tutor: ' + error.message);
+                    alert('Error al eliminar el tutor: ' + (error.message || 'Error'));
                 }
             }
         }

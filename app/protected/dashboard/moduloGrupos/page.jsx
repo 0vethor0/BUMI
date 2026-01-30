@@ -1,9 +1,15 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import styles from '../../../styles/ModuloGrupos.module.css';
 import Sidebar from '@/components/ui/Sidebar';
+import {
+  getUserAreaAction,
+  groupsListAction,
+  groupsWizardDataAction,
+  saveGroupsAction,
+  deleteGroupByNameAction,
+} from '@/app/protected/actions';
 
 const ModuloGrupos = () => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -35,221 +41,44 @@ const ModuloGrupos = () => {
 
     const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed);
 
-    // Obtener área del usuario
+    // Obtener área del usuario (server action)
     const fetchUserArea = useCallback(async () => {
-        const supabase = createClient();
         try {
-            const { data: areaId, error: rpcError } = await supabase.rpc('get_user_area');
-            if (rpcError) throw rpcError;
-
-            if (areaId === null) {
+            const area = await getUserAreaAction();
+            if (!area || area.id === null) {
+                setUserAreaId(null);
                 setUserAreaName('Sin área asignada');
                 return;
             }
-
-            setUserAreaId(areaId);
-
-            const { data: areaData, error: areaError } = await supabase
-                .from('tbareainvestigacion')
-                .select('nomb_area')
-                .eq('id', areaId)
-                .single();
-
-            if (areaError) throw areaError;
-            setUserAreaName(areaData?.nomb_area || 'Área no encontrada');
+            setUserAreaId(area.id);
+            setUserAreaName(area.name || 'Área no encontrada');
         } catch (err) {
             console.error('Error al obtener área del usuario:', err);
             setUserAreaName('Error al cargar área');
         }
     }, []);
 
-    // Cargar grupos (tabla principal) - VERSIÓN COMPLETAMENTE CORREGIDA
+    // Cargar grupos (server action)
     const fetchGroups = useCallback(async () => {
         setLoading(true);
-        const supabase = createClient();
         try {
-            // Primero obtenemos todos los grupos - SIN REFERENCIA A ID
-            const { data: gruposData, error: gruposError } = await supabase
-                .from('tbgrupos')
-                .select(`
-                    cedula_estudiante,
-                    id_proyecto,
-                    periodo_academico,
-                    nombre_grupo,
-                    estado,
-                    created_by
-                `)
-                .order('nombre_grupo', { ascending: true });
-
-            if (gruposError) throw gruposError;
-
-            if (!gruposData || gruposData.length === 0) {
-                setGroups([]);
-                return;
-            }
-
-            // Obtenemos IDs de proyectos únicos
-            const proyectoIds = [...new Set(gruposData.map(g => g.id_proyecto).filter(Boolean))];
-            
-            // Obtenemos información de proyectos
-            let proyectosMap = {};
-            if (proyectoIds.length > 0) {
-                const { data: proyectosData, error: proyectosError } = await supabase
-                    .from('tbproyecto')
-                    .select('id, titulo, id_area_investigacion')
-                    .in('id', proyectoIds);
-
-                if (proyectosError) throw proyectosError;
-
-                // Crear mapa de proyectos
-                proyectosData?.forEach(proyecto => {
-                    proyectosMap[proyecto.id] = proyecto;
-                });
-            }
-
-            // Obtenemos cédulas de estudiantes únicas
-            const cedulasEstudiantes = [...new Set(gruposData.map(g => g.cedula_estudiante).filter(Boolean))];
-            
-            // Obtenemos información de estudiantes
-            let estudiantesMap = {};
-            if (cedulasEstudiantes.length > 0) {
-                const { data: estudiantesData, error: estudiantesError } = await supabase
-                    .from('tbestudiante')
-                    .select('id, primer_nomb, primer_ape, segundo_nomb, segundo_ape')
-                    .in('id', cedulasEstudiantes);
-
-                if (estudiantesError) throw estudiantesError;
-
-                // Crear mapa de estudiantes
-                estudiantesData?.forEach(est => {
-                    estudiantesMap[est.id] = `${est.primer_nomb || ''} ${est.segundo_nomb || ''} ${est.primer_ape || ''} ${est.segundo_ape || ''}`.trim();
-                });
-            }
-
-            // Agrupamos por nombre_grupo
-            const gruposPorNombre = {};
-            
-            gruposData.forEach(grupo => {
-                const nombre = grupo.nombre_grupo;
-                const compositeKey = `${grupo.cedula_estudiante}|${grupo.id_proyecto}|${grupo.periodo_academico}`;
-                
-                if (!gruposPorNombre[nombre]) {
-                    const proyecto = proyectosMap[grupo.id_proyecto];
-                    
-                    gruposPorNombre[nombre] = {
-                        compositeKey, // Usamos la primera clave encontrada
-                        nombre_grupo: nombre || 'Sin nombre',
-                        periodo_academico: grupo.periodo_academico || '—',
-                        cedulas: new Set(),
-                        estudiantes: new Set(),
-                        id_proyecto: grupo.id_proyecto,
-                        proyecto: proyecto?.titulo || 'Sin proyecto asignado',
-                        id_area_investigacion: proyecto?.id_area_investigacion,
-                        estado: grupo.estado || 'Sin estado',
-                        created_by: grupo.created_by
-                    };
-                }
-                
-                // Agregar cédulas y nombres
-                if (grupo.cedula_estudiante) {
-                    gruposPorNombre[nombre].cedulas.add(grupo.cedula_estudiante);
-                    
-                    // Agregar nombre del estudiante
-                    if (estudiantesMap[grupo.cedula_estudiante]) {
-                        gruposPorNombre[nombre].estudiantes.add(estudiantesMap[grupo.cedula_estudiante]);
-                    }
-                }
-            });
-
-            // Convertir a array y formatear
-            const mappedGroups = Object.values(gruposPorNombre).map(group => ({
-                compositeKey: group.compositeKey,
-                nombre_grupo: group.nombre_grupo,
-                periodo_academico: group.periodo_academico,
-                cedula_estudiante: Array.from(group.cedulas).join(', '),
-                estudiante: Array.from(group.estudiantes).join(', ') || 'Sin estudiantes asignados',
-                id_proyecto: group.id_proyecto,
-                proyecto: group.proyecto,
-                id_area_investigacion: group.id_area_investigacion,
-                estado: group.estado
-            }));
-
-            // Filtrar por área del usuario si está disponible
-            const filteredGroups = userAreaId 
-                ? mappedGroups.filter(group => group.id_area_investigacion === userAreaId)
-                : mappedGroups;
-
-            setGroups(filteredGroups);
+            const result = await groupsListAction(userAreaId ?? undefined);
+            setGroups(result || []);
         } catch (error) {
             console.error('Error fetching groups:', error);
-            
-            // Versión simplificada como fallback
-            try {
-                const { data, error: simpleError } = await supabase
-                    .from('tbgrupos')
-                    .select('cedula_estudiante, id_proyecto, periodo_academico, nombre_grupo, estado')
-                    .order('nombre_grupo', { ascending: true });
-
-                if (simpleError) throw simpleError;
-
-                const simpleGroups = (data || []).map((group, index) => ({
-                    compositeKey: `${group.cedula_estudiante}|${group.id_proyecto}|${group.periodo_academico}`,
-                    nombre_grupo: group.nombre_grupo || 'Sin nombre',
-                    periodo_academico: group.periodo_academico || '—',
-                    cedula_estudiante: group.cedula_estudiante || '—',
-                    estudiante: 'Información no disponible',
-                    id_proyecto: group.id_proyecto,
-                    proyecto: 'Información no disponible',
-                    estado: group.estado || 'Sin estado'
-                }));
-
-                setGroups(simpleGroups);
-            } catch (fallbackError) {
-                console.error('Error en fallback:', fallbackError);
-                alert('No se pudieron cargar los grupos: ' + (fallbackError.message || 'Error desconocido'));
-                setGroups([]);
-            }
+            alert('No se pudieron cargar los grupos');
+            setGroups([]);
         } finally {
             setLoading(false);
         }
     }, [userAreaId]);
 
-    // Cargar datos para el wizard
+    // Cargar datos para el wizard (server action)
     const fetchWizardData = useCallback(async () => {
-        const supabase = createClient();
         try {
-            // Proyectos filtrados por área del usuario
-            const { data: projects } = await supabase
-                .from('tbproyecto')
-                .select('id, titulo')
-                .eq('id_area_investigacion', userAreaId);
+            const { projects, students, areas } = await groupsWizardDataAction(userAreaId);
             setProjectsList(projects || []);
-
-            // Estudiantes
-            const { data: students } = await supabase
-                .from('tbestudiante')
-                .select(`
-                    id,
-                    primer_nomb,
-                    segundo_nomb,
-                    primer_ape,
-                    segundo_ape,
-                    tbcarrera (nombre_carrera)
-                `)
-                .order('primer_ape', { ascending: true });
-
-            const mappedStudents = (students || []).map(s => ({
-                id: s.id,
-                nombreCompleto: [s.primer_nomb, s.segundo_nomb, s.primer_ape, s.segundo_ape]
-                    .filter(Boolean)
-                    .join(' '),
-                nombreSimple: `${s.primer_nomb || ''} ${s.primer_ape || ''}`.trim(),
-                carrera: s.tbcarrera?.nombre_carrera || ''
-            }));
-            setStudentsList(mappedStudents);
-
-            // Áreas
-            const { data: areas } = await supabase.from('tbareainvestigacion').select('*');
+            setStudentsList(students || []);
             setAreasInvestigacion(areas || []);
         } catch (error) {
             console.error('Error loading wizard data:', error);
@@ -389,18 +218,9 @@ const ModuloGrupos = () => {
         }
 
         if (window.confirm(`¿Estás seguro de eliminar el grupo "${group.nombre_grupo}"?`)) {
-            const supabase = createClient();
             setLoading(true);
             try {
-                const { error } = await supabase
-                    .from('tbgrupos')
-                    .delete()
-                    .eq('nombre_grupo', group.nombre_grupo)
-                    .eq('id_proyecto', group.id_proyecto)
-                    .eq('periodo_academico', group.periodo_academico);
-
-                if (error) throw error;
-
+                await deleteGroupByNameAction(group.nombre_grupo, group.id_proyecto, group.periodo_academico);
                 alert(`Grupo "${group.nombre_grupo}" eliminado correctamente`);
                 fetchGroups();
                 setSelectedRowKey(null);
@@ -444,47 +264,33 @@ const ModuloGrupos = () => {
             return;
         }
 
-        const supabase = createClient();
         setLoading(true);
 
         try {
-            // Obtener el ID del usuario actual
-            const { data: { user } } = await supabase.auth.getUser();
-            const userId = user?.id;
-
             // Para edición: eliminar todos los registros del grupo anterior
             if (editingGroupKey && originalGroupKey) {
                 // Eliminar por nombre_grupo original
                 const originalGroup = groups.find(g => g.compositeKey === editingGroupKey);
                 if (originalGroup) {
-                    const { error: deleteError } = await supabase
-                        .from('tbgrupos')
-                        .delete()
-                        .eq('nombre_grupo', originalGroup.nombre_grupo);
-
-                    if (deleteError) throw deleteError;
+                    await deleteGroupByNameAction(
+                        originalGroup.nombre_grupo,
+                        originalGroup.id_proyecto,
+                        originalGroup.periodo_academico
+                    );
                 }
             }
 
             // Construir arreglo de inserts (uno por cada estudiante seleccionado)
-            const inserts = wizardData.selectedStudents.map(student => ({
-                cedula_estudiante: student.id,
+            await saveGroupsAction({
+                selectedStudents: wizardData.selectedStudents.map(s => ({ id: s.id })),
                 id_proyecto: wizardData.id_proyecto,
-                periodo_academico: wizardData.periodo,
-                nombre_grupo: wizardData.nombreGrupo,
-                estado: 'En revisión',
-                created_by: userId
-            }));
-
-            const { error } = await supabase
-                .from('tbgrupos')
-                .insert(inserts);
-
-            if (error) throw error;
+                periodo: wizardData.periodo,
+                nombreGrupo: wizardData.nombreGrupo,
+            });
 
             alert(editingGroupKey 
                 ? `Grupo "${wizardData.nombreGrupo}" actualizado exitosamente` 
-                : `Se creó el grupo "${wizardData.nombreGrupo}" con ${inserts.length} estudiante(s)`
+                : `Se creó el grupo "${wizardData.nombreGrupo}" con ${wizardData.selectedStudents.length} estudiante(s)`
             );
             
             setIsWizardOpen(false);

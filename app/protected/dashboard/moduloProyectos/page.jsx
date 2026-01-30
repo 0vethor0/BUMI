@@ -1,10 +1,17 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import styles from '../../../styles/ModuloProyectos.module.css';
 import PDFUploader from '../../../../components/logica_PDFdownload/PDFUploader';
 import Sidebar from '@/components/ui/Sidebar';
+import {
+    getUserAreaAction,
+    fetchAllAreasAction,
+    listProjectsAction,
+    searchProjectsAction,
+    saveProjectAction,
+    deleteProjectAction
+} from '@/app/protected/actions';
 
 const ModuloProyectos = () => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -32,31 +39,10 @@ const ModuloProyectos = () => {
 
     // --- FUNCIÓN PARA OBTENER EL ÁREA DEL USUARIO LOGUEADO ---
     const fetchUserArea = useCallback(async () => {
-        const supabase = createClient();
         try {
-            // 1. Llamar a la función RPC para obtener el ID del área del admin
-            const { data: areaId, error: rpcError } = await supabase.rpc('get_user_area');
-
-            if (rpcError) throw rpcError;
-            
-            if (areaId === null) {
-                console.warn('El usuario no tiene un área asignada.');
-                setUserAreaName('Sin área asignada');
-                return;
-            }
-
-            setUserAreaId(areaId);
-
-            // 2. Obtener el nombre del área para mostrarlo en la UI
-            const { data: areaData, error: areaError } = await supabase
-                .from('tbareainvestigacion')
-                .select('nomb_area')
-                .eq('id', areaId)
-                .single();
-
-            if (areaError) throw areaError;
-            setUserAreaName(areaData?.nomb_area || 'Área no encontrada');
-
+            const { id, name } = await getUserAreaAction();
+            setUserAreaId(id);
+            setUserAreaName(name);
         } catch (err) {
             console.error('Error al obtener área del usuario:', err);
             setUserAreaName('Error al cargar área');
@@ -65,29 +51,15 @@ const ModuloProyectos = () => {
 
     // Cargamos todas las áreas solo para visualización en la tabla/lista
     const fetchAllAreas = useCallback(async () => {
-        const supabase = createClient();
-        const { data } = await supabase.from('tbareainvestigacion').select('id, nomb_area');
-        if (data) setAreasInvestigacion(data);
+        const areas = await fetchAllAreasAction();
+        if (areas) setAreasInvestigacion(areas);
     }, []);
 
     const fetchProjects = useCallback(async () => {
         setLoading(true);
-        const supabase = createClient();
         try {
-            const { data, error } = await supabase
-                .from('tbproyecto')
-                .select(`*`);
-            
-            if (error) throw error;
-
-            const mappedProjects = data.map(project => ({
-                ...project,
-                titulo: project.titulo || '',
-                resumen: project.resumen || '',
-                pdf_url: project.pdf_url || ''
-            }));
-
-            setProjects(mappedProjects);
+            const data = await listProjectsAction();
+            setProjects(data);
             setSelectedRowId(null);
         } catch (error) {
             console.error('Error al cargar proyectos:', error);
@@ -113,14 +85,8 @@ const ModuloProyectos = () => {
             return;
         }
         setLoading(true);
-        const supabase = createClient();
         try {
-            const { data, error } = await supabase
-                .from('tbproyecto')
-                .select(`*`)
-                .or(`titulo.ilike.%${searchTerm}%,resumen.ilike.%${searchTerm}%,tipo_investigacion.ilike.%${searchTerm}%`);
-
-            if (error) throw error;
+            const data = await searchProjectsAction(searchTerm);
             setProjects(data);
         } catch (error) {
             alert('Error al buscar proyectos: ' + error.message);
@@ -200,7 +166,6 @@ const ModuloProyectos = () => {
             return;
         }
 
-        const supabase = createClient();
         setLoading(true);
 
         try {
@@ -214,14 +179,7 @@ const ModuloProyectos = () => {
                 id_area_investigacion: userAreaId // Forzar el área del usuario logueado
             };
 
-            let error;
-            if (selectedRowId === 'new-row') {
-                ({ error } = await supabase.from('tbproyecto').insert([payload]));
-            } else {
-                ({ error } = await supabase.from('tbproyecto').update(payload).eq('id', selectedRowId));
-            }
-
-            if (error) throw error;
+            await saveProjectAction(selectedRowId, payload);
 
             alert('Operación exitosa');
             await fetchProjects();
@@ -254,11 +212,9 @@ const ModuloProyectos = () => {
         }
 
         if (window.confirm('¿Estás seguro de eliminar este proyecto?')) {
-            const supabase = createClient();
             setLoading(true);
             try {
-                const { error } = await supabase.from('tbproyecto').delete().eq('id', selectedRowId);
-                if (error) throw error;
+                await deleteProjectAction(selectedRowId);
                 await fetchProjects();
                 setSelectedRowId(null);
                 alert('Proyecto eliminado');
@@ -392,17 +348,12 @@ const ModuloProyectos = () => {
                                     <div className={styles.formGroup}>
                                         <label>Documento PDF *</label>
                                         <PDFUploader onUploadSuccess={handlePdfUploadSuccess} />
-                                        {newRowData.pdf_url && <p className="text-xs text-green-600">PDF listo para guardar</p>}
-                                        {/* 
-                                         * 2025-06-11 – Comentado temporalmente para evitar la carga automática del PDF
-                                         * en el formulario de edición.  
-                                         * Motivo:  
-                                         * - Puede ralentizar la UI si el archivo es pesado.  
-                                         * - Algunos navegadores bloquean iframes locales por política de seguridad.  
-                                         * - Se prefiere que el usuario decida visualizarlo con un botón “Ver PDF”
-                                         *   o mediante un enlace que abra en nueva pestaña.
-                                         */}
-                                        {/* <iframe src={newRowData.pdf_url} frameborder="0" style={{ width: '100%', height: '500px' }}></iframe> */}
+                                        {newRowData.pdf_url && (
+                                            <>
+                                                <p className="text-xs text-green-600">PDF listo para guardar</p>
+                                                <iframe src={newRowData.pdf_url} style={{ width: '100%', height: '500px' }}></iframe>
+                                            </>
+                                        )}
                                         
                                     </div>
                                 </div>

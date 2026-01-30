@@ -2,10 +2,16 @@
 
 import { useState, useEffect, useCallback } from 'react';
 
-import { createClient } from '@/lib/supabase/client';
 import styles from '../../../styles/ModuloEstudiantes.module.css';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/ui/Sidebar';
+import {
+    listStudentsAction,
+    searchStudentsAction,
+    saveStudentAction,
+    deleteStudentAction,
+    listCareersAction
+} from '@/app/protected/actions';
 
 
 
@@ -27,48 +33,19 @@ const ModuloEstudiantes = () => {
     const [careers, setCareers] = useState([]);
 
     const fetchStudents = useCallback(async () => {
-        const supabase = createClient();
         try {
-            const { data, error } = await supabase
-                .from('tbestudiante')
-                .select(`
-                    id,
-                    created_at,
-                    primer_nomb,
-                    segundo_nomb,
-                    primer_ape,
-                    segundo_ape,
-                    id_carrera,
-                    tbcarrera (
-                        nombre_carrera
-                    )
-                `);
-            
-            if (error) throw error;
-
-            const mappedStudents = data.map(student => ({
-                id: student.id,
-                firstName: [student.primer_nomb, student.segundo_nomb].filter(Boolean).join(' '),
-                lastName: [student.primer_ape, student.segundo_ape].filter(Boolean).join(' '),
-                career: student.tbcarrera?.nombre_carrera || '',
-                id_carrera: student.id_carrera
-            }));
+            const mappedStudents = await listStudentsAction();
             setStudents(mappedStudents);
             setSelectedRowId(null);
         } catch (error) {
             console.error('Error al cargar estudiantes:', error);
-            alert('Error al cargar los estudiantes: ' + error.message);
+            alert('Error al cargar los estudiantes: ' + (error.message || 'Error'));
         }
     }, []);
 
     const fetchCareers = useCallback(async () => {
-        const supabase = createClient();
         try {
-            const { data, error } = await supabase
-                .from('tbcarrera')
-                .select('*');
-            
-            if (error) throw error;
+            const data = await listCareersAction();
             setCareers(data);
         } catch (error) {
             console.error('Error al cargar carreras:', error);
@@ -85,38 +62,13 @@ const ModuloEstudiantes = () => {
             fetchStudents();
             return;
         }
-        const supabase = createClient();
         try {
-            const { data, error } = await supabase
-                .from('tbestudiante')
-                .select(`
-                    id,
-                    created_at,
-                    primer_nomb,
-                    segundo_nomb,
-                    primer_ape,
-                    segundo_ape,
-                    id_carrera,
-                    tbcarrera (
-                        nombre_carrera
-                    )
-                `)
-                .or(`id.ilike.%${searchTerm}%, primer_nomb.ilike.%${searchTerm}%, segundo_nomb.ilike.%${searchTerm}%, primer_ape.ilike.%${searchTerm}%, segundo_ape.ilike.%${searchTerm}%`);
-
-            if (error) throw error;
-
-            const mappedStudents = data.map(student => ({
-                id: student.id,
-                firstName: [student.primer_nomb, student.segundo_nomb].filter(Boolean).join(' '),
-                lastName: [student.primer_ape, student.segundo_ape].filter(Boolean).join(' '),
-                career: student.tbcarrera?.nombre_carrera || '',
-                id_carrera: student.id_carrera
-            }));
+            const mappedStudents = await searchStudentsAction(searchTerm);
             setStudents(mappedStudents);
             setSelectedRowId(null);
         } catch (error) {
             console.error('Error al buscar estudiantes:', error);
-            alert('Error al buscar estudiantes: ' + error.message);
+            alert('Error al buscar estudiantes: ' + (error.message || 'Error'));
         }
     };
 
@@ -158,8 +110,6 @@ const ModuloEstudiantes = () => {
             return;
         }
 
-        const supabase = createClient();
-
         if (!isEditing) {
             setIsEditing(true);
             const rowToEdit = students.find(student => student.id === selectedRowId);
@@ -183,37 +133,15 @@ const ModuloEstudiantes = () => {
             }
 
             try {
-                const payload = {
-                    primer_nomb: newRowData.primer_nomb,
-                    segundo_nomb: newRowData.segundo_nomb,
-                    primer_ape: newRowData.primer_ape,
-                    segundo_ape: newRowData.segundo_ape,
-                    id_carrera: newRowData.id_carrera ? parseInt(newRowData.id_carrera) : null
-                };
-
-                if (selectedRowId === 'new-row') {
-                    // Insertar nuevo
-                    const { error } = await supabase
-                        .from('tbestudiante')
-                        .insert([{ ...payload, id: newRowData.id }]);
-                    if (error) throw error;
-                    alert('Estudiante creado con éxito');
-                } else {
-                    // Actualizar existente
-                    const { error } = await supabase
-                        .from('tbestudiante')
-                        .update(payload)
-                        .eq('id', selectedRowId);
-                    if (error) throw error;
-                    alert('Estudiante actualizado con éxito');
-                }
+                await saveStudentAction(selectedRowId, newRowData);
+                alert(selectedRowId === 'new-row' ? 'Estudiante creado con éxito' : 'Estudiante actualizado con éxito');
 
                 await fetchStudents();
                 setIsEditing(false);
                 setSelectedRowId(null);
             } catch (error) {
                 console.error('Error al guardar estudiante:', error);
-                alert('Error al guardar: ' + error.message);
+                alert('Error al guardar: ' + (error.message || 'Error'));
             }
         }
     };
@@ -237,15 +165,8 @@ const ModuloEstudiantes = () => {
             });
         } else {
             if (window.confirm('¿Estás seguro de que quieres eliminar la fila seleccionada?')) {
-                const supabase = createClient();
                 try {
-                    const { error } = await supabase
-                        .from('tbestudiante')
-                        .delete()
-                        .eq('id', selectedRowId);
-                    
-                    if (error) throw error;
-                    
+                    await deleteStudentAction(selectedRowId);
                     await fetchStudents();
                     setSelectedRowId(null);
                     alert('Fila eliminada.');
