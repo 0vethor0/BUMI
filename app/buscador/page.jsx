@@ -24,7 +24,8 @@ const BuscadorPrincipal = () => {
                 title: project.titulo,
                 objectiveGeneral: project.obj_general,
                 summary: project.resumen,
-                type: project.tipo_investigacion
+                type: project.tipo_investigacion,
+                pdf_url: project.pdf_url || ''  // ← Agregado
             }));
             setProjects(mappedProjects);
             console.log('Proyectos cargados:', mappedProjects);
@@ -62,7 +63,8 @@ const BuscadorPrincipal = () => {
                     title: project.titulo,
                     objectiveGeneral: project.obj_general,
                     summary: project.resumen,
-                    type: project.tipo_investigacion
+                    type: project.tipo_investigacion,
+                    pdf_url: project.pdf_url || ''  // ← Agregado
                 }));
                 setProjects(mappedProjects);
                 console.log('Resultados de búsqueda:', mappedProjects);
@@ -153,7 +155,21 @@ const BuscadorPrincipal = () => {
                                     <strong>{project.title}</strong>
                                     <p><strong>Objetivo General:</strong> {project.objectiveGeneral}</p>
                                     <p><strong>Resumen:</strong> {project.summary}</p>
-                                    <span className={styles.filter}>Tipo de Investigación: {project.type}</span>
+                                    <div className="flex items-center gap-4 mt-2">
+                                        <span className={styles.filter}>
+                                            Tipo de Investigación: {project.type}
+                                        </span>
+                                        {project.pdf_url && (
+                                            <a
+                                                href={project.pdf_url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-blue-600 hover:text-blue-800 underline text-sm font-medium"
+                                            >
+                                                Ver PDF
+                                            </a>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         ))}
@@ -292,4 +308,3 @@ const BuscadorPrincipal = () => {
 };
 
 export default BuscadorPrincipal;
-
