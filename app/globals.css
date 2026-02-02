@@ -1,10 +1,21 @@
 
-@plugin "tailwindcss-animate";
 
-@custom-variant dark (&:is(.dark *));
 
 /* Generales y Resets */
 :root {
+    --pp-background: 0 0% 100%;
+    --pp-foreground: 171 44% 50%;
+    --pp-card: 0 0% 100%;
+    --pp-card-foreground: 222.2 84% 4.9%;
+    --pp-primary: 169 59% 47%; /* hsl(#28a79a tu primary-color) */
+    --pp-primary-foreground: 0 0% 0%;
+    --pp-secondary: 210 40% 96%;
+    --pp-secondary-foreground: 222.2 47.4% 11.2%;
+    --pp-muted: 210 40% 96%;
+    --pp-muted-foreground: 215.4 16.3% 46.9%;
+    --pp-border: 214.3 31.8% 91.4%;
+    --pp-ring: 222.2 84% 4.9%;
+    --pp-radius: 0.5rem;
     --primary-color: #28a79a; /* Verde azulado principal (se mantiene) */
     --secondary-color: #38b1a3; /* Un tono ligeramente más claro (se mantiene) */
     --text-dark: #333333; /* Un gris muy oscuro, casi negro */
@@ -620,6 +631,10 @@ section h2 {
 }
 
 .dark {
+    --pp-background: 222.2 84% 4.9%;
+    --pp-foreground: 210 40% 98%;
+    --pp-primary: 169 59% 47%;
+    --pp-primary-foreground: 222.2 47.4% 11.2%;
     --background: oklch(0.145 0 0);
     --foreground: oklch(0.985 0 0);
     --card: oklch(0.205 0 0);
@@ -660,4 +675,31 @@ section h2 {
   body {
     @apply bg-background text-foreground;
     }
+}
+
+.btn-register, .btn-login {
+  padding: 0.4rem 1rem; /* Pixel-perfect más compacto */
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 0.25rem;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+.btn-register {
+  border: 1px solid hsl(var(--pp-primary));
+  color: hsl(var(--pp-primary));
+  background: transparent;
+}
+.btn-register:hover {
+  background: hsl(var(--pp-primary));
+  color: hsl(var(--pp-primary-foreground));
+}
+.btn-login {
+  background: hsl(var(--pp-primary));
+  color: white;
+  border: 1px solid hsl(var(--pp-primary));
+}
+.btn-login:hover {
+  opacity: 0.9;
 }

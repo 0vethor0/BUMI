@@ -1,0 +1,154 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background-color: hsl(var(--pp-background));
+  border-bottom: none;
+}
+
+.container {
+  width: 100%;           /* Ocupa el 100% de la pantalla */
+  max-width: 100%;       /* Eliminamos el límite de 1400px */
+  margin: 0;             /* Ya no necesita centrarse porque ocupa todo */
+  padding: 0.5rem 2rem;
+  
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  box-sizing: border-box;
+  
+  box-shadow: 0 4px 12px rgba(26,44,235,0.12), 0 0 8px #1a2cebc7, 0 0 24px rgba(26,44,235,0.30);
+  
+}
+.logoLink {
+  text-decoration: none;
+  cursor: pointer;
+  display: flex; /* Para que mantenga la alineación con el texto */
+  transition: opacity 0.2s ease;
+}
+
+.logoLink:hover {
+  opacity: 0.8; /* Efecto sutil al pasar el mouse */
+}
+
+.logoSection {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.logoIcon {
+  background: hsl(var(--pp-secondary));
+  padding: 0.4rem 0.75rem;
+  border-radius: 0.25rem;
+  
+}
+
+.logoText {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 500;
+  font-size: 1.1rem;
+  color: black;
+  letter-spacing: 0.5px;
+
+  display: flex;
+  align-items: center; /* Alinea el H1, el pilar y el subtexto en el medio */
+  gap: 0
+
+}
+.logoText h1{
+  margin: 0;
+  line-height: 1;
+  font-weight: 700;
+}
+.pilarVertical {
+  width: 1.5px;                 /* Grosor para que resalte como en la imagen */
+  height: 2rem;             /* Altura proporcional al texto */
+  background-color: #333;     /* Color oscuro casi negro */
+  margin: 0 1rem;            /* Espacio a los lados */
+  align-self: center;         /* Centrado vertical dentro del flex */
+  display: block;             /* Asegura que se renderice como bloque */
+}
+
+.logoSubtext {
+  display: none;
+  flex-direction: column;
+  font-size: 0.65rem;
+  color: hsl(var(--pp-muted-foreground));
+  line-height: 1.3;
+  font-family: 'Montserrat', sans-serif;
+}
+
+@media (min-width: 768px) {
+  .logoSubtext {
+    display: flex;
+  }
+}
+
+.nav {
+  display: none;
+  align-items: center;
+  gap: 2rem;
+}
+
+@media (min-width: 768px) {
+  .nav {
+    display: flex;
+  }
+}
+
+.navOpen {
+  display: flex !important;
+  flex-direction: column;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: hsl(var(--pp-background));
+  padding: 1.5rem;
+  gap: 1rem;
+  border-bottom: 1px solid hsl(var(--pp-border));
+  z-index: 99;
+}
+
+.navLink {
+  font-size: 0.85rem;
+  color: black;
+  font-weight: 500;
+  transition: color 0.2s ease;
+  text-decoration: none;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.navLink:hover {
+  color: hsl(var(--pp-primary));
+}
+
+.authButtons {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.menuToggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  background: transparent;
+  border: none;
+  color: hsl(var(--pp-foreground));
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.menuToggle:hover {
+  color: hsl(var(--pp-primary));
+}
+
+@media (min-width: 768px) {
+  .menuToggle {
+    display: none;
+  }
+}
