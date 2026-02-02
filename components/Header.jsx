@@ -39,7 +39,7 @@ return (
                 <Link href="#manual" className={styles.navLink}>Manual del Usuario</Link>
                 <Link href="#contacto" className={styles.navLink}>Contacto</Link>
                 <div className={styles.authButtons}>
-                    <Link href="/auth/register" className="btn-register">Register</Link>
+                    <Link href="/auth/sign-up" className="btn-register">Register</Link>
                     <Link href="/auth/login" className="btn-login">Login</Link>
                 </div>
             </nav>
