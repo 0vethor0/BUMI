@@ -1,0 +1,48 @@
+.container {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  overflow: hidden;
+  position: relative; /* Importante para el texto que agregamos antes */
+}
+
+.bannerImage {
+  width: 100%;
+  height: auto;
+  display: block;
+  /* Asegura que la imagen mantenga su calidad */
+  image-rendering: auto; 
+}
+
+/* Ajustes específicos para móviles */
+@media (max-width: 766px) {/*maximo para resolucion de pc*/
+  .container {
+    /* Definimos una altura fija o mínima para que no se vea tan pequeño */
+    height: 180px;
+    
+  }
+
+  .bannerImage {
+    height: 100%; /* Obligamos a la imagen a llenar la altura del contenedor */
+    width: 100%;
+    /* 'cover' expande la imagen para llenar el área sin deformarse, 
+       cortando un poco los bordes si es necesario */
+    object-fit: cover; 
+    /* 'object-position' centra la parte importante de la imagen */
+    object-position: center; 
+  }
+}
+
+/* Para pantallas muy pequeñas (reloj o teléfonos mini) */
+@media (max-width: 480px) {
+  .container {
+    height: 150px;
+  }
+
+    .bannerImage {
+        height: 100%;
+        width: 100%;
+        object-fit: cover;
+        object-position: center; 
+    }
+}

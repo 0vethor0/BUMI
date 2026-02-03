@@ -3,6 +3,8 @@
 import Header from '@/components/Header';
 import Testimonials from '@/components/Testimonials';
 import Footer from '@/components/Footer';
+import BannerPatriotico from '@/components/BannerPatriotico';
+import Hero from '@/components/Hero';
 
 const PaginaPrincipal = () => {
   const handleBuscarClick = () => {
@@ -12,35 +14,9 @@ const PaginaPrincipal = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background"> {/* Exacto Index.tsx */}
       <Header />
+      <BannerPatriotico />
       <main className="flex-1"> {/* flex-1 para Footer sticky abajo */}
-        {/* TU HERO/SEARCH (movido de viejo <header>, clases globals.css intactas) */}
-        <header className="header"> {/* Mantengo tu .header globals (teal) */}
-          <div className="header-main">
-            <div className="header-search-section">
-              <h1>BUSCADOR DE MATERIAL DE INVESTIGACIÓN</h1>
-              <p>
-                Bumi es básicamente un Google Academy, un sitio web al cual puedes
-                acceder desde cualquier parte del mundo para consultar los
-                trabajos de investigación hechos por la comunidad de estudiantes e
-                investigadores Unefista.....
-              </p>
-              <a href="#" className="btn-join-now">
-                Únete Ahora
-              </a>
-              <div className="search-box">
-                <input type="text" placeholder="¿Qué necesitas buscar?" />
-                <button onClick={handleBuscarClick}>Buscar</button>
-              </div>
-            </div>
-            <div className="header-image-card">
-              <img
-                src="/image/logo.png"
-                alt="BUMI Logo con birrete"
-                className="card-image"
-              />
-            </div>
-          </div>
-        </header>
+        <Hero handleBuscarClick={handleBuscarClick} />
 
         {/* TU MAIN CONTENT (intacto, globals.css) */}
         <main className="main-content">
@@ -88,7 +64,7 @@ const PaginaPrincipal = () => {
             <div className="mvo-content">
               <div className="mvo-image-container">
                 <img
-                  src="/image/logo ING Sistemas.jpg"
+                  src="../public/image/"
                   alt="Escudo de Ingeniería de Sistemas"
                   className="mvo-image"
                 />
