@@ -322,8 +322,16 @@ const ModuloProyectos = () => {
                                         <input type="text" name="titulo" value={newRowData.titulo} onChange={handleInputChange} />
                                     </div>
                                     <div className={styles.formGroup}>
+                                        <label>Resumen *</label>
+                                        <textarea name="resumen" value={newRowData.resumen} onChange={handleInputChange} rows="4" />
+                                    </div>
+                                    <div className={styles.formGroup}>
                                         <label>Objetivo General *</label>
                                         <textarea name="obj_general" value={newRowData.obj_general} onChange={handleInputChange} rows="3" />
+                                    </div>
+                                    <div className={styles.formGroup}>
+                                        <label>Objetivos Específicos *</label>
+                                        <textarea name="objetivos_especificos" value={newRowData.objetivos_especificos} onChange={handleInputChange} rows="4" />
                                     </div>
                                 </div>
 

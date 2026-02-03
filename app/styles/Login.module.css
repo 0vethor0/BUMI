@@ -4,6 +4,7 @@
     align-items: center;
     min-height: 100vh;
     background-color: rgba(73, 181, 172, 0.5);
+    padding: 20px; /* Agregado padding para evitar bordes en móviles */
     }
 
     .wrapper {
@@ -309,4 +310,82 @@
 
     .hidden {
     pointer-events: none;
+    }
+
+    /* --- RESPONSIVE DESIGN (BUMI UI Fixes) --- */
+
+    /* Tablets y pantallas medianas (<= 768px) */
+    @media (max-width: 768px) {
+        .wrapper {
+            width: 90%;
+            max-width: 450px;
+            height: auto;
+            min-height: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Ocultar las animaciones de fondo complejas que rompen el layout en móvil */
+        .bgAnimate,
+        .bgAnimate2 {
+            display: none;
+        }
+
+        /* Hacer que el formulario ocupe todo el ancho */
+        .formBox {
+            position: relative;
+            width: 100%;
+            height: auto;
+            top: auto;
+            left: auto;
+            right: auto;
+            padding: 40px 30px;
+        }
+
+        .formBox.login {
+            padding: 40px 30px;
+            left: auto; /* Resetear posición absoluta */
+        }
+        
+        /* Ocultar el panel lateral de "Bienvenido" para simplificar la vista */
+        .infoText {
+            display: none;
+        }
+    }
+
+    /* Móviles pequeños (<= 480px) */
+    @media (max-width: 480px) {
+        .wrapper {
+            width: 100%;
+            border-radius: 0; /* Opcional: quitar bordes redondeados en full screen */
+            box-shadow: none; /* Simplificar sombra */
+            background: transparent; /* O usar blanco si se prefiere card */
+        }
+        
+        .wrapper {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .formBox.login {
+            padding: 30px 20px;
+        }
+
+        .formBox h2 {
+            font-size: 24px;
+        }
+
+        .inputBox {
+            height: 45px;
+            margin: 20px 0;
+        }
+
+        .inputBox input {
+            font-size: 14px;
+        }
+        
+        .logregLink {
+            font-size: 13px;
+        }
     }
