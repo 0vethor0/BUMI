@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import styles from '@/app/styles/Login.module.css'   // ← mismo archivo CSS que usa login
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
+import LogicaMostrarPass from './LogicaMostrarPass'
 
 export function SignUpForm() {
     const [email, setEmail] = useState('')
@@ -104,35 +105,25 @@ export function SignUpForm() {
                             <i className="bx bx-user"></i>
                         </div>
 
-                        <div
+                        <LogicaMostrarPass
+                            id="password"
+                            placeholder="Contraseña"
+                            required
+                            value={password}
+                            onChange={(e: any) => setPassword(e.target.value)}
                             className={`${styles.inputBox} ${styles.animation}`}
                             style={{ '--i': 2, '--j': 23 } as React.CSSProperties}
-                        >
-                            <input
-                                id="password"
-                                type="password"
-                                required
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                            />
-                            <label htmlFor="password">Contraseña</label>
-                            <i className="bx bx-lock"></i>
-                        </div>
+                        />
 
-                        <div
+                        <LogicaMostrarPass
+                            id="repeat-password"
+                            placeholder="Repita su Contraseña"
+                            required
+                            value={repeatPassword}
+                            onChange={(e: any) => setRepeatPassword(e.target.value)}
                             className={`${styles.inputBox} ${styles.animation}`}
                             style={{ '--i': 3, '--j': 24 } as React.CSSProperties}
-                        >
-                            <input
-                                id="repeat-password"
-                                type="password"
-                                required
-                                value={repeatPassword}
-                                onChange={(e) => setRepeatPassword(e.target.value)}
-                            />
-                            <label htmlFor="repeat-password">Repita su Contraseña</label>
-                            <i className="bx bx-lock"></i>
-                        </div>
+                        />
 
                         {error && (
                             <p style={{ color: 'red', fontSize: '14px', margin: '10px 0' }}>

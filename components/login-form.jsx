@@ -5,6 +5,7 @@ import { useFormState, useFormStatus } from 'react-dom'
 import styles from '@/app/styles/Login.module.css'
 import Link from 'next/link'
 import { loginAction } from '@/app/auth/actions'
+import LogicaMostrarPass from './LogicaMostrarPass'
 
 const initialState = { error: null }
 
@@ -50,17 +51,14 @@ export function LoginForm() {
               <i className="bx bx-user"></i>
             </div>
 
-            <div className={`${styles.inputBox} ${styles.animation}`} style={{ '--i': 2, '--j': 23 }}>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                autoComplete="current-password"
-              />
-              <label htmlFor="password">Contraseña</label>
-              <i className="bx bx-lock"></i>
-
+            <LogicaMostrarPass
+              id="password"
+              name="password"
+              placeholder="Contraseña"
+              required
+              className={`${styles.inputBox} ${styles.animation}`}
+              style={{ '--i': 2, '--j': 23 }}
+            >
               <Link
                 href="/auth/forgot-password"
                 className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
@@ -68,7 +66,7 @@ export function LoginForm() {
               >
                 ¿Olvidaste tu contraseña?
               </Link>
-            </div>
+            </LogicaMostrarPass>
 
             {state?.error && (
               <p style={{ color: 'red', fontSize: '14px', margin: '10px 0', textAlign: 'center' }}>
