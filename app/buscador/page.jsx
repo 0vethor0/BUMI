@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import styles from '../styles/BuscadorPrincipal.module.css';
 import { listProjectsAction, searchProjectsAction } from '@/app/protected/actions';
 
@@ -78,7 +79,7 @@ const BuscadorPrincipal = () => {
             <header className={styles.header}>
                 <div className={styles.headerContainer}>
                     <div className={styles.headerLeft}>
-                        <img src="/image/logo.png" alt="Logo" className={styles.logo} />
+                        <Image src="/image/logo.png" alt="Logo" width={48} height={48} className={styles.logo} />
                         <h1 className={styles.title}>BUMI</h1>
                     </div>
                     <div className={styles.headerRight}>

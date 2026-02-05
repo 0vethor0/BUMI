@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Header from '@/components/Header';
 import Testimonials from '@/components/Testimonials';
 import Footer from '@/components/Footer';
@@ -33,9 +34,11 @@ const PaginaPrincipal = () => {
               </div>
             </div>
             <div className="header-image-card">
-              <img
+              <Image
                 src="/image/logo.png"
                 alt="BUMI Logo con birrete"
+                width={280}
+                height={200}
                 className="card-image"
               />
             </div>
@@ -87,9 +90,11 @@ const PaginaPrincipal = () => {
             <h2>Misión, Visión y Objetivos</h2>
             <div className="mvo-content">
               <div className="mvo-image-container">
-                <img
+                <Image
                   src="/image/logo ING Sistemas.jpg"
                   alt="Escudo de Ingeniería de Sistemas"
+                  width={200}
+                  height={200}
                   className="mvo-image"
                 />
                 <div className="mvo-image-text">INGENIERÍA DE SISTEMAS</div>

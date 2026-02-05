@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import styles from '../../../styles/ModuloProyectos.module.css';
 import PDFUploader from '../../../../components/logica_PDFdownload/PDFUploader';
 import Sidebar from '@/components/ui/Sidebar';
@@ -250,7 +251,7 @@ const ModuloProyectos = () => {
                     <div className={styles.headerIcons}>
                         <div className={styles.headerProfile} title={`Área: ${userAreaName}`}>
                             <span className="mr-2 text-sm font-bold text-blue-700">{userAreaName}</span>
-                            <img src="/image/logo.png" alt="User" />
+                            <Image src="/image/logo.png" alt="User" width={32} height={32} />
                         </div>
                     </div>
                 </header>

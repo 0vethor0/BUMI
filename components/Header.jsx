@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import styles from '../app/styles/Header.module.css';
 
 
@@ -15,11 +16,12 @@ return (
                 
                 <Link href="/" className={styles.logoLink}> 
                     
-                        <img
+                        <Image
                         src="/image/logoBUMI.png"
                         alt="Logo BUMI"
+                        width={40}
+                        height={40}
                         className={styles.logoImage}
-                        style={{ width: '40px', height: '40px' }}
                         />
                     
                 </Link>

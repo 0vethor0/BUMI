@@ -5,8 +5,9 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from '../../../styles/Login.module.css';
 
-import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
+import Link from 'next/link';
+import Image from 'next/image';
+import { createClient } from '@/lib/supabase/client';
 
 
 
@@ -141,8 +142,10 @@ export default function LoginForm({}) {
             <h2 className={styles.animation} style={{ '--i': 0, '--j': 20 }}>
                 ¡Bienvenido!
             </h2>
-            <img
+            <Image
                 src="/image/graduadoICON.png"
+                width={120}
+                height={120}
                 className={styles.animation}
                 style={{ '--i': 1, '--j': 21 }}
                 alt="Graduado"

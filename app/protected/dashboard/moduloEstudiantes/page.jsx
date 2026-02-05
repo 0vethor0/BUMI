@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-
+import Image from 'next/image';
 import styles from '../../../styles/ModuloEstudiantes.module.css';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/ui/Sidebar';
@@ -211,7 +211,7 @@ const ModuloEstudiantes = () => {
                         <button className={styles.iconButton}><i className="fas fa-ellipsis-v"></i></button>
                         <button className={styles.iconButton}><i className="fas fa-bell"></i></button>
                         <div className={styles.headerProfile}>
-                            <img src="/image/logo.png" alt="User Avatar" />
+                            <Image src="/image/logo.png" alt="User Avatar" width={32} height={32} />
                         </div>
                     </div>
                 </header>

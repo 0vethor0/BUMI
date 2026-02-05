@@ -5,8 +5,9 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import styles from '@/app/styles/Login.module.css'   // ← mismo archivo CSS que usa login
 import { createClient } from '@/lib/supabase/client'
-import Link from 'next/link'
-import LogicaMostrarPass from './LogicaMostrarPass'
+import Link from 'next/link';
+import Image from 'next/image';
+import LogicaMostrarPass from './LogicaMostrarPass';
 
 export function SignUpForm() {
     const [email, setEmail] = useState('')
@@ -156,8 +157,10 @@ export function SignUpForm() {
 
                 {/* === PANEL DERECHO DECORATIVO (igual que login) === */}
                 <div className={`${styles.infoText} ${styles.login}`}>
-                    <img
+                    <Image
                         src="/image/graduadoICON.png"
+                        width={120}
+                        height={120}
                         className={styles.animation}
                         style={{ '--i': 1, '--j': 21 } as React.CSSProperties}
                         alt="Graduado"

@@ -3,8 +3,9 @@
 
 import { useFormState, useFormStatus } from 'react-dom'
 import styles from '@/app/styles/Login.module.css'
-import Link from 'next/link'
-import { loginAction } from '@/app/auth/actions'
+import Link from 'next/link';
+import Image from 'next/image';
+import { loginAction } from '@/app/auth/actions';
 import LogicaMostrarPass from './LogicaMostrarPass'
 
 const initialState = { error: null }
@@ -99,8 +100,10 @@ export function LoginForm() {
           <h2 className={styles.animation} style={{ '--i': 0, '--j': 20 }}>
             ¡Bienvenido!
           </h2>
-          <img
+          <Image
             src="/image/graduadoICON.png"
+            width={120}
+            height={120}
             className={styles.animation}
             style={{ '--i': 1, '--j': 21 }}
             alt="Graduado"

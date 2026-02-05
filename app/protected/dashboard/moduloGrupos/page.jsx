@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import styles from '../../../styles/ModuloGrupos.module.css';
 import Sidebar from '@/components/ui/Sidebar';
 import {
@@ -344,7 +345,7 @@ const ModuloGrupos = () => {
                             <span style={{ marginRight: '10px', fontSize: '0.8rem', fontWeight: 'bold', color: '#1a56db' }}>
                                 {userAreaName}
                             </span>
-                            <img src="/image/logo.png" alt="User Avatar" />
+                            <Image src="/image/logo.png" alt="User Avatar" width={32} height={32} />
                         </div>
                     </div>
                 </header>
