@@ -12,6 +12,8 @@ import {
   deleteGroupByNameAction,
 } from '@/app/protected/actions';
 
+export const dynamic = 'force-dynamic'
+
 const ModuloGrupos = () => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [groups, setGroups] = useState([]);

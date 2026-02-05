@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/ui/Sidebar';
 import { listTutorsAction, searchTutorsAction, saveTutorAction, deleteTutorAction } from '@/app/protected/actions';
 
-
+export const dynamic = 'force-dynamic'
 
 const ModuloTutores = () => {
     const router = useRouter();

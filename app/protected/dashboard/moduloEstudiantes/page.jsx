@@ -13,7 +13,7 @@ import {
     listCareersAction
 } from '@/app/protected/actions';
 
-
+export const dynamic = 'force-dynamic'
 
 const ModuloEstudiantes = () => {
     const router = useRouter();

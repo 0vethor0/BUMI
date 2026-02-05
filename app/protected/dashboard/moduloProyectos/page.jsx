@@ -14,6 +14,8 @@ import {
     deleteProjectAction
 } from '@/app/protected/actions';
 
+export const dynamic = 'force-dynamic'
+
 const ModuloProyectos = () => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [projects, setProjects] = useState([]);

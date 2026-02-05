@@ -1,7 +1,8 @@
-// ...existing code...
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+
+export const dynamic = 'force-dynamic'
 
 export default async function ProtectedIndexPage() {
   try {
@@ -10,7 +11,9 @@ export default async function ProtectedIndexPage() {
 
     // Si supabase responde con error o no hay claims -> forzar login
     if (error) {
-      console.error('Supabase getClaims error:', error)
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn('Supabase getClaims error:', error)
+      }
       redirect('/auth/login')
     }
 
@@ -29,7 +32,9 @@ export default async function ProtectedIndexPage() {
     }
 
     // Captura errores inesperados del servidor y muestra UI amigable
-    console.error('Error verificando sesión en /protected:', err)
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('Error verificando sesión en /protected:', err)
+    }
     return (
       <main className="min-h-screen flex items-center justify-center p-6">
         <div className="max-w-lg w-full bg-white rounded-md shadow-md p-6">
@@ -50,4 +55,3 @@ export default async function ProtectedIndexPage() {
     )
   }
 }
-// ...existing code...
