@@ -136,21 +136,16 @@ Si necesitas ayuda con el proyecto, puedes contactar al mantenedor principal a t
 
 ### Anexos
 
-Pagina del Buscador Principal:
+Pagina del Buscador Principal (Diseño en Figma):
 
 ![Principal Page](https://i.ibb.co/BKPMzSTC/Pagina-Principal.webp)
+Autor: Vincent Fernandez (2025)
 
 ---
 
 Diagrama de la base de datos:
 
-![base de datos](https://i.ibb.co/1tWFvQDx/diagrama-db.png)
+![base de datos](https://i.ibb.co/9mcsLh4h/image.png)
 
 ----
 
-
-Diagrama de la base de datos:
-
-![base de datos](https://i.ibb.co/1tWFvQDx/diagrama-db.png)
-
-----
