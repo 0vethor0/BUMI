@@ -1,15 +1,27 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
 import styles from '../styles/BuscadorPrincipal.module.css';
-import { listProjectsAction, searchProjectsAction } from '@/app/protected/actions';
+import { listProjectsAction, searchProjectsAction, fetchAllAreasAction } from '@/app/protected/actions';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 
 const BuscadorPrincipal = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [projects, setProjects] = useState([]);
     const [showMoreYears, setShowMoreYears] = useState(false);
+
+    const [areasInvestigacion, setAreasInvestigacion] = useState([]);
+
+
+    const fetchAllAreas = useCallback(async () => {
+        try {
+            const areas = await fetchAllAreasAction();
+            if (areas) setAreasInvestigacion(areas);
+        } catch (err) {
+            console.error('Error al cargar áreas de investigación:', err);
+        }
+    }, []);
 
     const fetchProjects = useCallback(async () => {
         try {
@@ -17,8 +29,7 @@ const BuscadorPrincipal = () => {
             const mappedProjects = (data || []).map(project => ({
                 idproyecto: project.id,
                 title: project.titulo,
-                objectiveGeneral: project.obj_general,
-                summary: project.resumen,
+                id_area_investigacion: project.id_area_investigacion,
                 type: project.tipo_investigacion,
                 pdf_url: project.pdf_url || '',
             }));
@@ -31,7 +42,8 @@ const BuscadorPrincipal = () => {
 
     useEffect(() => {
         fetchProjects();
-    }, [fetchProjects]);
+        fetchAllAreas();
+    }, [fetchProjects, fetchAllAreas]);
 
     const handleSearchClick = async () => {
         if (!searchTerm.trim()) {
@@ -48,8 +60,7 @@ const BuscadorPrincipal = () => {
                 const mappedProjects = data.map(project => ({
                     idproyecto: project.id,
                     title: project.titulo,
-                    objectiveGeneral: project.obj_general,
-                    summary: project.resumen,
+                    id_area_investigacion: project.id_area_investigacion,
                     type: project.tipo_investigacion,
                     pdf_url: project.pdf_url || '',
                 }));
@@ -75,76 +86,61 @@ const BuscadorPrincipal = () => {
     };
 
     return (
-        <div>
-            <header className={styles.header}>
-                <div className={styles.headerContainer}>
-                    <div className={styles.headerLeft}>
-                        <Image src="/image/logo.png" alt="Logo" width={48} height={48} className={styles.logo} />
-                        <h1 className={styles.title}>BUMI</h1>
-                    </div>
-                    <div className={styles.headerRight}>
-                        <a href="#" className={styles.headerLink}>Manual de Usuario</a>
-                        <span>|</span>
-                        <a href="#" className={styles.headerLink}>Contacto</a>
-                        <Link href="/auth/login" className={styles.headerButton}>Register</Link>
-                        <Link href="/auth/login" className={styles.headerButton}>Log In</Link>
-                    </div>
-                </div>
-            </header>
+        <div className="min-h-screen flex flex-col bg-background">
+            <Header />
 
             <div className={styles.container}>
                 <div className={styles.searchSection}>
                     <div className={styles.searchBar}>
-                        <i className="fas fa-search"></i>
-                        <input
-                            type="text"
-                            placeholder="Buscar..."
-                            value={searchTerm}
-                            onChange={handleSearchChange}
-                            className={styles.searchInput}
-                        />
+                        
+                        <div className="input-group mb-3">
+                            <input type="text" className="form-control" value={searchTerm} onChange={handleSearchChange} aria-describedby="button-addon2"  />
+                            <button className="btn btn-outline-secondary" type="button" id="button-addon2" onClick={handleSearchClick}>Buscar</button>
+                        </div>
+                    </div>
+                    <div className={styles.searchLinks}>
                         <button
-                            className={`${styles.button} ${styles.buttonSecondary}`}
-                            onClick={handleSearchClick}
-                        >
-                            Buscar
-                        </button>
-                        <button
-                            className={`${styles.button} ${styles.buttonSecondary}`}
-                            onClick={handleResetSearch}
-                        >
-                            Restablecer
-                        </button>
-                        <button
-                            className={`${styles.button} ${styles.buttonSecondary}`}
+                            type="button"
+                            className={styles.searchLink}
                             data-bs-toggle="modal"
                             data-bs-target="#filtersModal"
                         >
-                            Filtros
+                            <svg xmlns="http://www.w3.org/2000/svg" width={20} height={20} fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M20 2H4c-.55 0-1 .45-1 1v2c0 .22.07.43.2.6L9 13.33V21a1 1 0 0 0 1 1c.15 0 .31-.04.45-.11l4-2A1 1 0 0 0 15 19v-5.67l5.8-7.73c.13-.17.2-.38.2-.6V3c0-.55-.45-1-1-1m-1 2.67-5.8 7.73c-.13.17-.2.38-.2.6v5.38l-2 1V13c0-.22-.07-.43-.2-.6L5 4.67V4h14z" />
+                            </svg>
+                            <span>Filtrar</span>
                         </button>
                         <button
-                            className={`${styles.button} ${styles.buttonSecondary}`}
+                            type="button"
+                            className={styles.searchLink}
                             data-bs-toggle="modal"
                             data-bs-target="#advancedSearchModal"
                         >
-                            Búsqueda Avanzada
+                            <svg xmlns="http://www.w3.org/2000/svg" width={20} height={20} fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" />
+                            </svg>
+                            <span>Búsqueda avanzada</span>
                         </button>
                     </div>
                 </div>
 
+                {/* Results Section */}
                 <div className={styles.resultsSection}>
                     <h2>{projects.length} Resultados Relacionados</h2>
+
                     <div className={styles.projectList}>
                         {projects.map(project => (
                             <div key={project.idproyecto} className={styles.projectItem}>
+
                                 <div className={styles.projectContent}>
                                     <strong>{project.title}</strong>
-                                    <p><strong>Objetivo General:</strong> {project.objectiveGeneral}</p>
-                                    <p><strong>Resumen:</strong> {project.summary}</p>
+                                    
+                                    <p>Área de Investigación: {areasInvestigacion.find(a => a.id === project.id_area_investigacion)?.nomb_area || 'Cargando...'}</p>
                                     <div className="flex items-center gap-4 mt-2">
                                         <span className={styles.filter}>
                                             Tipo de Investigación: {project.type}
                                         </span>
+                                        <br />
                                         {project.pdf_url && (
                                             <a
                                                 href={project.pdf_url}
@@ -156,7 +152,9 @@ const BuscadorPrincipal = () => {
                                             </a>
                                         )}
                                     </div>
+
                                 </div>
+
                             </div>
                         ))}
                     </div>
@@ -289,6 +287,8 @@ const BuscadorPrincipal = () => {
                     </div>
                 </div>
             </div>
+
+            <Footer />
         </div>
     );
 };

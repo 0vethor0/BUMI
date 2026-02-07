@@ -77,6 +77,18 @@ const ModuloProyectos = () => {
         fetchUserArea(); // Obtener el área del usuario al iniciar
     }, [fetchProjects, fetchAllAreas, fetchUserArea]);
 
+    // Cerrar sidebar automáticamente en viewport <= 765px
+    useEffect(() => {
+        const checkWidth = () => {
+            if (typeof window !== 'undefined' && window.innerWidth <= 765) {
+                setSidebarCollapsed(true);
+            }
+        };
+        checkWidth();
+        window.addEventListener('resize', checkWidth);
+        return () => window.removeEventListener('resize', checkWidth);
+    }, []);
+
     const handlePdfUploadSuccess = (publicUrl) => {
         setNewRowData(prev => ({ ...prev, pdf_url: publicUrl }));
         alert('¡PDF subido exitosamente!');
@@ -260,16 +272,21 @@ const ModuloProyectos = () => {
 
                 {!isEditing && (
                     <div className={styles.card}>
-                        <div className={styles.searchBar}>
-                            <input 
-                                type="text" 
-                                placeholder="Buscar por título o resumen..." 
-                                value={searchTerm} 
-                                onChange={(e) => setSearchTerm(e.target.value)} 
+
+                        <div className="input-group mb-3">
+                            <input type="text" 
+                            className="form-control" 
+                            placeholder="Buscar por título o resumen..." 
+                            aria-label="Buscar por título o resumen..." 
+                            aria-describedby="button-addon2" 
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
                             />
-                            <button className={styles.button} onClick={handleSearchClick} disabled={loading}>Buscar</button>
-                            <button className={styles.button} onClick={handleResetSearch}>Restablecer</button>
+                            <button className="btn btn-outline-secondary" type="button" id="button-addon2" onClick={handleSearchClick} disabled={loading}>Buscar</button>
+                            <button className="btn btn-outline-secondary" type="button" id="button-addon2" onClick={handleResetSearch} disabled={loading}>Limpiar</button>
                         </div>
+
+                    
 
                         {loading ? (
                             <p className="text-center py-8">Cargando...</p>
@@ -304,9 +321,9 @@ const ModuloProyectos = () => {
                         )}
 
                         <div className={styles.actions}>
-                            <button className={styles.button} onClick={handleNewClick} disabled={loading}>Nuevo</button>
-                            <button className={styles.button} onClick={handleModifyClick} disabled={loading}>{getButtonText('modify')}</button>
-                            <button className={styles.button} onClick={handleDeleteClick} disabled={loading}>{getButtonText('delete')}</button>
+                            <button className="btn btn-outline-secondary" type="button" id="button-addon2" onClick={handleNewClick} disabled={loading}>Nuevo</button>
+                            <button className="btn btn-outline-secondary" type="button" id="button-addon2" onClick={handleModifyClick} disabled={loading}>{getButtonText('modify')}</button>
+                            <button className="btn btn-outline-danger" type="button" onClick={handleDeleteClick} disabled={loading}>{getButtonText('delete')}</button>
                         </div>
                     </div>
                 )}

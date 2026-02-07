@@ -44,6 +44,18 @@ const ModuloGrupos = () => {
 
     const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed);
 
+    // Cerrar sidebar automáticamente en viewport <= 765px
+    useEffect(() => {
+        const checkWidth = () => {
+            if (typeof window !== 'undefined' && window.innerWidth <= 765) {
+                setSidebarCollapsed(true);
+            }
+        };
+        checkWidth();
+        window.addEventListener('resize', checkWidth);
+        return () => window.removeEventListener('resize', checkWidth);
+    }, []);
+
     // Obtener área del usuario (server action)
     const fetchUserArea = useCallback(async () => {
         try {
@@ -426,21 +438,21 @@ const ModuloGrupos = () => {
 
                         <div className={styles.actions}>
                             <button 
-                                className={`${styles.button} ${styles.buttonSecondary}`} 
+                                className="btn btn-outline-secondary" type="button" id="button-addon2" 
                                 onClick={handleNewClick}
                                 disabled={loading}
                             >
                                 Nuevo
                             </button>
                             <button 
-                                className={`${styles.button} ${styles.buttonOutline}`} 
+                                className="btn btn-outline-secondary" type="button" id="button-addon2" 
                                 onClick={handleEditClick}
                                 disabled={!selectedRowKey || loading}
                             >
                                 Modificar
                             </button>
                             <button 
-                                className={`${styles.button} ${styles.buttonDanger}`} 
+                                className="btn btn-outline-danger" 
                                 onClick={handleDeleteClick}
                                 disabled={!selectedRowKey || loading}
                             >

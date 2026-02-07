@@ -25,12 +25,10 @@ const PaginaPrincipal = () => {
                 trabajos de investigación hechos por la comunidad de estudiantes e
                 investigadores Unefista.....
               </p>
-              <a href="#" className="btn-join-now">
-                Únete Ahora
-              </a>
-              <div className="search-box">
-                <input type="text" placeholder="¿Qué necesitas buscar?" />
-                <button onClick={handleBuscarClick}>Buscar</button>
+              
+              <div className="input-group mb-3">
+                <input type="text" className="form-control" placeholder="¿Qué necesitas buscar?" aria-label="¿Qué necesitas buscar?" aria-describedby="button-addon2" />
+                <button className="btn btn-outline-secondary" type="button" id="button-addon2" onClick={handleBuscarClick}>Buscar</button>
               </div>
             </div>
             <div className="header-image-card">

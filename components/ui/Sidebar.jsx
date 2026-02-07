@@ -17,35 +17,60 @@ const Sidebar = ({ isCollapsed, onToggle }) => {
         { href: '/protected/dashboard/moduloProyectos', icon: 'bx-folder', label: 'Proyectos' },
     ];
 
-    return (
-        <nav className={`${styles.sidebar} ${isCollapsed ? styles.collapsedSidebar : ''}`}>
-            <div className={styles.sidebarHeader}>
-                <div className={styles.logo} onClick={onToggle}>
-                    <i className="bx bx-grid-alt"></i>
-                </div>
-                <span className={styles.appName}>Bumi Unefa</span>
-            </div>
-            
-            <div className={styles.sidebarNav}>
-                <ul>
-                    {navLinks.map((link) => (
-                        <li 
-                            key={link.href + link.label} 
-                            className={pathname === link.href ? styles.active : ''}
-                        >
-                            <Link href={link.href}>
-                                <i className={`bx ${link.icon}`}></i>
-                                <span>{link.label}</span>
-                            </Link>
-                        </li>
-                    ))}
-                </ul>
-            </div>
+    const handleToggle = () => {
+        if (typeof onToggle === 'function') onToggle();
+    };
 
-            <div className={styles.logout}>
-                <LogoutButton />
-            </div>
-        </nav>
+    return (
+        <div
+            className={`${styles.sidebarWrapper} ${isCollapsed ? styles.sidebarWrapperCollapsed : ''}`}
+            role="complementary"
+            aria-label="Menú de navegación"
+        >
+            <nav className={styles.sidebar}>
+                <div className={styles.sidebarHeader}>
+                    <button
+                        type="button"
+                        className={styles.logo}
+                        onClick={handleToggle}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                handleToggle();
+                            }
+                        }}
+                        aria-label={isCollapsed ? 'Abrir menú lateral' : 'Cerrar menú lateral'}
+                        title={isCollapsed ? 'Abrir menú' : 'Cerrar menú'}
+                    >
+                        <i className="bx bx-grid-alt" aria-hidden="true"></i>
+                    </button>
+                    <span className={styles.appName}>
+                        Bumi-UNEFA
+                    </span>
+                </div>
+
+                <div className={styles.sidebarNav}>
+                    <ul>
+                        {navLinks.map((link) => (
+                            <li
+                                key={link.href + link.label}
+                                className={pathname === link.href ? styles.active : ''}
+                            >
+                                <Link href={link.href}>
+                                    <i className={`bx ${link.icon}`}></i>
+                                    <span>{link.label}</span>
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+                
+                
+                <div className={styles.logout} style={{ padding: '10px' }}>
+                    <LogoutButton />
+                </div>
+            </nav>
+        </div>
     );
 };
 

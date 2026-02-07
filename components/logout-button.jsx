@@ -33,11 +33,11 @@ export default function LogoutButton() {
     <button
       type="button"
       onClick={handleLogout}
-      className="px-3 py-1 ml-3 bg-red-600 text-white rounded"
+      className="btn btn-outline-secondary"
       disabled={loading}
-      aria-label="Cerrar sesión"
+      aria-label="Salir"
     >
-      {loading ? 'Cerrando...' : 'Cerrar sesión'}
+      {loading ? 'Cerrando...' : 'Salir'}
     </button>
   );
 }

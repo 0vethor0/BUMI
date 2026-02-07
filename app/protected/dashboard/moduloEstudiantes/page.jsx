@@ -57,6 +57,18 @@ const ModuloEstudiantes = () => {
         fetchCareers();
     }, [fetchStudents, fetchCareers]);
 
+    // Cerrar sidebar automáticamente en viewport <= 765px
+    useEffect(() => {
+        const checkWidth = () => {
+            if (typeof window !== 'undefined' && window.innerWidth <= 765) {
+                setSidebarCollapsed(true);
+            }
+        };
+        checkWidth();
+        window.addEventListener('resize', checkWidth);
+        return () => window.removeEventListener('resize', checkWidth);
+    }, []);
+
     const handleSearchClick = async () => {
         if (!searchTerm.trim()) {
             fetchStudents();
@@ -217,27 +229,19 @@ const ModuloEstudiantes = () => {
                 </header>
 
                 <div className={styles.card}>
-                    <div className={styles.searchBar}>
-                        <i className="fas fa-search"></i>
-                        <input 
-                            type="text" 
-                            placeholder="Buscar por cedula o nombre..." 
+
+                <div className="input-group mb-3">
+                            <input type="text" 
+                            className="form-control" 
+                            placeholder="Buscar por cedula, nombre, entre otros..." 
+                            aria-label="Buscar por título o ..." 
+                            aria-describedby="button-addon2" 
                             value={searchTerm}
                             onChange={handleSearchChange}
-                        />
-                        <button 
-                            className={`${styles.button} ${styles.buttonSecondary}`}
-                            onClick={handleSearchClick}
-                        >
-                            Buscar
-                        </button>
-                        <button 
-                            className={`${styles.button} ${styles.buttonSecondary}`}
-                            onClick={handleResetSearch}
-                        >
-                            Restablecer
-                        </button>
-                    </div>
+                            />
+                            <button className="btn btn-outline-secondary" type="button" id="button-addon2" onClick={handleSearchClick} >Buscar</button>
+                            <button className="btn btn-outline-secondary" type="button" id="button-addon2" onClick={handleResetSearch} >Limpiar</button>
+                        </div>
 
                     <div className={styles.dataTableContainer}>
                         <table className={styles.dataTable} id="studentsTable">
@@ -325,11 +329,10 @@ const ModuloEstudiantes = () => {
                     </div>
 
                     <div className={styles.actions}>
-                        <button className={`${styles.button} ${styles.buttonSecondary} ${styles.assignButton}`} id="assignGroupBtn">Asignar Agrupacion</button>
-                        <button className={`${styles.button} ${styles.buttonSecondary}`} id="newBtn" onClick={handleNewClick} disabled={isEditing}>Nuevo</button>
+                        <button className="btn btn-outline-secondary" type="button" id="button-addon2" >Asignar Agrupacion</button>
+                        <button className="btn btn-outline-secondary" type="button" id="button-addon2" onClick={handleNewClick} disabled={isEditing}>Nuevo</button>
                         <button
-                            className={`${styles.button} ${styles.buttonOutline}`}
-                            id="modifyBtn"
+                            className="btn btn-outline-secondary" type="button" id="button-addon2"
                             onClick={handleModifyClick}
                             disabled={!selectedRowId && !isEditing}
                         >

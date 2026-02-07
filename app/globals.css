@@ -205,6 +205,15 @@ a:hover {
     background-color: #beebe4;
 }
 
+/* Botón Buscar del header (input-group) - estilos persistidos desde preview */
+#button-addon2 {
+    background-color: rgba(73, 181, 172, 1);
+    border-color: rgba(255, 255, 255, 1);
+    background-image: none;
+    line-height: 25px;
+    color: rgba(255, 255, 255, 1);
+}
+
 .header-image-card {
     flex: 1;
     background-color: var(--background-white);
