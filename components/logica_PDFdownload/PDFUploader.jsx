@@ -15,7 +15,7 @@ export default function PDFUploader({ onUploadSuccess }) {
     if (selected && selected.type === 'application/pdf') {
       setFile(selected);
       setError('');
-      setSuccessUrl('');
+      setSuccessUrl(''); // Reset successUrl when a new file is selected
     } else {
       setError('Por favor selecciona solo archivos PDF');
       setFile(null);
@@ -87,7 +87,7 @@ export default function PDFUploader({ onUploadSuccess }) {
         type="file"
         accept="application/pdf"
         onChange={handleFileChange}
-        disabled={uploading}
+        disabled={uploading || successUrl} // Disable button if uploading or a PDF is already uploaded
         className="block w-full text-sm text-gray-900 border rounded-lg cursor-pointer bg-gray-50"
       />
 
@@ -96,12 +96,12 @@ export default function PDFUploader({ onUploadSuccess }) {
           <p className="text-sm text-gray-600">Archivo seleccionado: {file.name}</p>
           <button
             onClick={uploadToR2}
-            disabled={uploading}
-            className={`mt-3 px-6 py-2 rounded text-white font-medium ${
-              uploading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'
-            }`}
+            disabled={uploading || successUrl} // Disable button if uploading or a PDF is already uploaded
+            type='button'
+            id="button-addon2"
+            className={`btn btn-outline-secondary ${uploading ? 'opacity-50' : ''}`}
           >
-            {uploading ? 'Subiendo...' : 'Subir a Cloudflare R2'}
+            {uploading ? 'Subiendo...' : 'Subir PDF al servidor'}
           </button>
         </div>
       )}
