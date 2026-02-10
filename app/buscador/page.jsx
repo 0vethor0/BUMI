@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import styles from '../styles/BuscadorPrincipal.module.css';
-import { listProjectsAction, searchProjectsAction, fetchAllAreasAction } from '@/app/protected/actions';
+import { listProjectsAction, searchProjectsAction, fetchAllAreasAction, filterProjectsAction } from '@/app/protected/actions';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 const BuscadorPrincipal = () => {
+    const searchParams = useSearchParams();
     const [searchTerm, setSearchTerm] = useState('');
     const [projects, setProjects] = useState([]);
     const [showMoreYears, setShowMoreYears] = useState(false);
@@ -23,9 +25,9 @@ const BuscadorPrincipal = () => {
         }
     }, []);
 
-    const fetchProjects = useCallback(async () => {
+    const fetchProjects = useCallback(async (term) => {
         try {
-            const data = await listProjectsAction();
+            const data = term ? await searchProjectsAction(term) : await listProjectsAction();
             const mappedProjects = (data || []).map(project => ({
                 idproyecto: project.id,
                 title: project.titulo,
@@ -41,9 +43,15 @@ const BuscadorPrincipal = () => {
     }, []);
 
     useEffect(() => {
-        fetchProjects();
+        const term = searchParams.get('q');
+        if (term) {
+            setSearchTerm(term);
+            fetchProjects(term);
+        } else {
+            fetchProjects();
+        }
         fetchAllAreas();
-    }, [fetchProjects, fetchAllAreas]);
+    }, [searchParams, fetchProjects, fetchAllAreas]);
 
     const handleSearchClick = async () => {
         if (!searchTerm.trim()) {
@@ -71,6 +79,8 @@ const BuscadorPrincipal = () => {
             alert('Error al buscar proyectos');
         }
     };
+
+    
 
     const handleResetSearch = () => {
         setSearchTerm('');
@@ -159,11 +169,7 @@ const BuscadorPrincipal = () => {
                         ))}
                     </div>
 
-                    <div className={styles.pagination}>
-                        <button>&lt; Anterior</button>
-                        <span>1 2 3 4 5 6 7 8 9 ...</span>
-                        <button>Siguiente &gt;</button>
-                    </div>
+                    
                 </div>
 
                 {/* Filters Modal */}

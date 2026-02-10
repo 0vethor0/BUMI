@@ -1,3 +1,4 @@
+    
     'use server';
     
     import { createClient } from '@/lib/supabase/server';
@@ -41,15 +42,12 @@
     }
     
     export async function searchProjectsAction(searchTerm: string) {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-        .from('tbproyecto')
-        .select('*')
-        .or(
-        `titulo.ilike.%${searchTerm}%,resumen.ilike.%${searchTerm}%,tipo_investigacion.ilike.%${searchTerm}%`
-        );
-    if (error) throw error;
-    return data || [];
+      const supabase = await createClient();
+      const { data, error } = await supabase
+        .rpc('search_projects_unaccent', { term: searchTerm, limit_count: 20 });
+
+      if (error) throw error;
+      return data || [];
     }
     
     export async function saveProjectAction(selectedRowId: string | number, payload: any) {
@@ -395,4 +393,58 @@ export async function deleteGroupByNameAction(nombre_grupo: string, id_proyecto:
     .eq('periodo_academico', periodo_academico);
   if (error) throw error;
   return { ok: true };
+}
+
+
+export async function filterProjectsAction(filters, currentSearchTerm = '') {
+    const supabase = await createClient();
+    
+    // Iniciamos la consulta base
+    let query = supabase
+        .from('tbproyecto')
+        .select(`
+            *,
+            tbestudiante!inner (id, primer_nomb, primer_ape, id_carrera),
+            tbtutor!inner (cedula_tutor, primer_nomb, primer_ape)
+        `);
+
+    // 1. Aplicar búsqueda por texto si existe (Búsqueda en proceso)
+    if (currentSearchTerm.trim()) {
+        query = query.or(`titulo.ilike.%${currentSearchTerm}%,resumen.ilike.%${currentSearchTerm}%`);
+    }
+
+    // 2. Filtros Dinámicos (Solo se aplican si el campo tiene valor)
+    if (filters.periodo) {
+        query = query.eq('periodo_academico', filters.periodo);
+    }
+    if (filters.id_area) {
+        query = query.eq('id_area_investigacion', filters.id_area);
+    }
+    if (filters.id_carrera) {
+        query = query.eq('tbestudiante.id_carrera', filters.id_carrera);
+    }
+    
+    // Filtros de Tutor (Nombre o Cédula)
+    if (filters.cedula_tutor) {
+        query = query.eq('tbtutor.cedula_tutor', filters.cedula_tutor);
+    }
+    if (filters.nombre_tutor) {
+        query = query.ilike('tbtutor.primer_nomb', `%${filters.nombre_tutor}%`);
+    }
+
+    // Filtros de Estudiante (Nombre o Cédula)
+    if (filters.cedula_estudiante) {
+        query = query.eq('tbestudiante.id', filters.cedula_estudiante);
+    }
+    if (filters.nombre_estudiante) {
+        query = query.ilike('tbestudiante.primer_nomb', `%${filters.nombre_estudiante}%`);
+    }
+
+    const { data, error } = await query.limit(50);
+
+    if (error) {
+        console.error("Error en filtrado:", error);
+        throw error;
+    }
+    return data || [];
 }

@@ -4,10 +4,20 @@ import Image from 'next/image';
 import Header from '@/components/Header';
 import Testimonials from '@/components/Testimonials';
 import Footer from '@/components/Footer';
+import { listProjectsAction, searchProjectsAction, fetchAllAreasAction, filterProjectsAction } from '@/app/protected/actions';
+
 
 const PaginaPrincipal = () => {
   const handleBuscarClick = () => {
-    window.location.href = "/buscador";
+    const searchInput = document.querySelector('input[placeholder="¿Qué necesitas buscar?"]');
+    const searchTerm = searchInput?.value || '';
+    
+    if (searchTerm) {
+      window.location.href = `/buscador?q=${encodeURIComponent(searchTerm)}`;
+    } else {
+      window.location.href = "/buscador";
+      alert("No se encontraron coincidencias para la búsqueda");
+    }
   };
 
   return (
