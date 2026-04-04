@@ -1,37 +1,68 @@
     
     'use server';
-    
-    import { createClient } from '@/lib/supabase/server';
-    
-    export async function getUserAreaAction() {
+
+/**
+ * Acciones del Servidor (Server Actions) para el área protegida.
+ * Este archivo centraliza la lógica de negocio que interactúa con la base de datos Supabase.
+ * Al usar 'use server', estas funciones se ejecutan exclusivamente en el servidor.
+ */
+
+import { createClient } from '@/lib/supabase/server';
+
+/**
+ * Obtiene el área de investigación asignada al usuario actual.
+ * Utiliza una función RPC de PostgreSQL para identificar el área del usuario.
+ * 
+ * @returns {Promise<Object>} Un objeto con el ID y el nombre del área.
+ */
+export async function getUserAreaAction() {
     const supabase = await createClient();
+    // Llama al procedimiento almacenado 'get_user_area' en la DB.
     const { data: areaId, error: rpcError } = await supabase.rpc('get_user_area');
     if (rpcError) throw rpcError;
+    
+    // Si no hay área asignada, retorna valores nulos.
     if (areaId === null) {
         return { id: null, name: 'Sin área asignada' };
     }
+    
+    // Consulta el nombre del área en la tabla 'tbareainvestigacion'.
     const { data: areaData, error: areaError } = await supabase
         .from('tbareainvestigacion')
         .select('nomb_area')
         .eq('id', areaId)
         .single();
     if (areaError) throw areaError;
-    return { id: areaId, name: areaData?.nomb_area || 'Área no encontrada' };
-    }
     
-    export async function fetchAllAreasAction() {
+    return { id: areaId, name: areaData?.nomb_area || 'Área no encontrada' };
+}
+
+/**
+ * Lista todas las áreas de investigación disponibles en el sistema.
+ * 
+ * @returns {Promise<Array>} Arreglo de objetos con ID y nombre del área.
+ */
+export async function fetchAllAreasAction() {
     const supabase = await createClient();
     const { data, error } = await supabase
         .from('tbareainvestigacion')
         .select('id, nomb_area');
     if (error) throw error;
     return data || [];
-    }
-    
-    export async function listProjectsAction() {
+}
+
+/**
+ * Obtiene todos los proyectos de investigación.
+ * Mapea los resultados para asegurar que campos opcionales no sean nulos.
+ * 
+ * @returns {Promise<Array>} Lista de proyectos procesada.
+ */
+export async function listProjectsAction() {
     const supabase = await createClient();
     const { data, error } = await supabase.from('tbproyecto').select('*');
     if (error) throw error;
+    
+    // Procesa cada proyecto para evitar valores nulos en el frontend.
     const mapped = (data || []).map((project: any) => ({
         ...project,
         titulo: project.titulo || '',
@@ -39,58 +70,90 @@
         pdf_url: project.pdf_url || '',
     }));
     return mapped;
-    }
-    
-    export async function searchProjectsAction(searchTerm: string) {
-      const supabase = await createClient();
-      const { data, error } = await supabase
+}
+
+/**
+ * Realiza una búsqueda de proyectos utilizando una función de búsqueda insensible a acentos.
+ * 
+ * @param {string} searchTerm - Término de búsqueda.
+ * @returns {Promise<Array>} Resultados de la búsqueda.
+ */
+export async function searchProjectsAction(searchTerm: string) {
+    const supabase = await createClient();
+    const { data, error } = await supabase
         .rpc('search_projects_unaccent', { term: searchTerm, limit_count: 20 });
 
-      if (error) throw error;
-      return data || [];
-    }
-    
-    export async function saveProjectAction(selectedRowId: string | number, payload: any) {
+    if (error) throw error;
+    return data || [];
+}
+
+/**
+ * Crea o actualiza un proyecto en la base de datos.
+ * 
+ * @param {string|number} selectedRowId - ID de la fila ('new-row' para inserción).
+ * @param {Object} payload - Datos del proyecto a guardar.
+ */
+export async function saveProjectAction(selectedRowId: string | number, payload: any) {
     const supabase = await createClient();
     let error;
+    
     if (selectedRowId === 'new-row') {
+        // Inserta un nuevo registro si el ID es 'new-row'.
         ({ error } = await supabase.from('tbproyecto').insert([payload]));
     } else {
+        // Actualiza el registro existente basado en su ID.
         ({ error } = await supabase
-        .from('tbproyecto')
-        .update(payload)
-        .eq('id', selectedRowId));
-    }
-    if (error) throw error;
-    return { ok: true };
+            .from('tbproyecto')
+            .update(payload)
+            .eq('id', selectedRowId));
     }
     
-    export async function deleteProjectAction(id: number) {
+    if (error) throw error;
+    return { ok: true };
+}
+
+/**
+ * Elimina un proyecto por su ID.
+ * 
+ * @param {number} id - ID del proyecto a eliminar.
+ */
+export async function deleteProjectAction(id: number) {
     const supabase = await createClient();
     const { error } = await supabase.from('tbproyecto').delete().eq('id', id);
     if (error) throw error;
     return { ok: true };
-    }
+}
 
+/**
+ * Lista los tutores asociados al área del usuario actual.
+ * Realiza un mapeo para estandarizar los nombres de las propiedades.
+ * 
+ * @returns {Promise<Array>} Lista de tutores procesada.
+ */
 export async function listTutorsAction() {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('tbtutor')
-    .select(`
-      cedula_tutor,
-      created_at,
-      primer_nomb,
-      segundo_nomb,
-      primer_ape,
-      segundo_ape
-    `);
-  if (error) throw error;
-  return (data || []).map((tutor: any) => ({
-    id: tutor.cedula_tutor,
-    cedula: tutor.cedula_tutor,
-    firstName: [tutor.primer_nomb, tutor.segundo_nomb].filter(Boolean).join(' '),
-    lastName: [tutor.primer_ape, tutor.segundo_ape].filter(Boolean).join(' '),
-  }));
+    const supabase = await createClient();
+    const area = await getUserAreaAction();
+    if (!area.id) return [];
+    
+    const { data, error } = await supabase
+        .from('tbtutor')
+        .select(`
+            cedula_tutor,
+            created_at,
+            primer_nomb,
+            segundo_nomb,
+            primer_ape,
+            segundo_ape
+        `);
+    if (error) throw error;
+    
+    // Mapea los campos de la DB a una estructura más amigable para el frontend.
+    return (data || []).map((tutor: any) => ({
+        id: tutor.cedula_tutor,
+        cedula: tutor.cedula_tutor,
+        firstName: [tutor.primer_nomb, tutor.segundo_nomb].filter(Boolean).join(' '),
+        lastName: [tutor.primer_ape, tutor.segundo_ape].filter(Boolean).join(' '),
+    }));
 }
 
 export async function searchTutorsAction(term: string) {
@@ -121,20 +184,67 @@ export async function searchTutorsAction(term: string) {
   }));
 }
 
-export async function saveTutorAction(selectedRowId: string | number, payload: any) {
+export async function saveTutorAction(selectedRowId: string | number, newRowData: any) {
   const supabase = await createClient();
+  const area = await getUserAreaAction();
+  if (!area.id) {
+    throw new Error('No tienes área asignada. Contacta al administrador.');
+  }
+
+  // Preparar payload parcial
+  const payload: Partial<any> = {};
+  if (newRowData.primer_nomb !== undefined) payload.primer_nomb = newRowData.primer_nomb;
+  if (newRowData.segundo_nomb !== undefined) payload.segundo_nomb = newRowData.segundo_nomb;
+  if (newRowData.primer_ape !== undefined) payload.primer_ape = newRowData.primer_ape;
+  if (newRowData.segundo_ape !== undefined) payload.segundo_ape = newRowData.segundo_ape;
+
+  // Detectar si cedula_tutor cambió (PK)
+  const oldCedula = selectedRowId.toString();
+  const newCedula = newRowData.cedula_tutor?.toString() || oldCedula;
+  const cedulaChanged = newCedula !== oldCedula;
+  if (cedulaChanged) {
+    payload.cedula_tutor = newCedula;
+  }
+
   let error;
   if (selectedRowId === 'new-row') {
-    ({ error } = await supabase
-      .from('tbtutor')
-      .insert([{ ...payload, cedula_tutor: payload.cedula_tutor }]));
+    // Insert nuevo
+    ({ error } = await supabase.from('tbtutor').insert([{ ...payload, cedula_tutor: newCedula }]));
+    if (error) {
+      if (error.code === '23505') return { ok: false, duplicate: true };
+      throw error;
+    }
+
+    // Asignar visibilidad
+    const { error: visError } = await supabase.from('entity_visibility').upsert({
+      entity_type: 'tutor',
+      entity_id: newCedula,
+      area_id: area.id,
+      visible: true,
+      created_by: (await supabase.auth.getUser()).data.user?.id
+    }, { onConflict: 'entity_type, entity_id, area_id' });
+    if (visError) throw visError;
   } else {
-    ({ error } = await supabase
-      .from('tbtutor')
-      .update(payload)
-      .eq('cedula_tutor', selectedRowId));
+    // Update existente
+    ({ error } = await supabase.from('tbtutor').update(payload).eq('cedula_tutor', oldCedula));
+    if (error) {
+      if (error.code === '23505') return { ok: false, duplicate: true };
+      throw error;  // RLS fallará si no visible
+    }
+
+    // Propagación si cedula cambió
+    if (cedulaChanged) {
+      const { error: visUpdateError } = await supabase
+        .from('entity_visibility')
+        .update({ entity_id: newCedula })
+        .eq('entity_type', 'tutor')
+        .eq('entity_id', oldCedula)
+        .eq('area_id', area.id);
+      if (visUpdateError) throw visUpdateError;
+    }
+
   }
-  if (error) throw error;
+
   return { ok: true };
 }
 
@@ -154,6 +264,10 @@ export async function listCareersAction() {
 
 export async function listStudentsAction() {
   const supabase = await createClient();
+  const area = await getUserAreaAction();
+  if (!area.id) {
+    return [];  // O throw Error si prefieres
+  }
   const { data, error } = await supabase
     .from('tbestudiante')
     .select(`
@@ -205,20 +319,65 @@ export async function searchStudentsAction(term: string) {
 
 export async function saveStudentAction(selectedRowId: string | number, newRowData: any) {
   const supabase = await createClient();
-  const payload = {
-    primer_nomb: newRowData.primer_nomb,
-    segundo_nomb: newRowData.segundo_nomb,
-    primer_ape: newRowData.primer_ape,
-    segundo_ape: newRowData.segundo_ape,
-    id_carrera: newRowData.id_carrera ? parseInt(newRowData.id_carrera) : null,
-  };
+  const area = await getUserAreaAction();
+  if (!area.id) {
+    throw new Error('No tienes área asignada. Contacta al administrador.');
+  }
+
+  // Preparar payload parcial (solo campos proporcionados)
+  const payload: Partial<any> = {};
+  if (newRowData.primer_nomb !== undefined) payload.primer_nomb = newRowData.primer_nomb;
+  if (newRowData.segundo_nomb !== undefined) payload.segundo_nomb = newRowData.segundo_nomb;
+  if (newRowData.primer_ape !== undefined) payload.primer_ape = newRowData.primer_ape;
+  if (newRowData.segundo_ape !== undefined) payload.segundo_ape = newRowData.segundo_ape;
+  if (newRowData.id_carrera !== undefined) payload.id_carrera = newRowData.id_carrera ? parseInt(newRowData.id_carrera) : null;
+
+  // Detectar si ID cambió (para PK update)
+  const oldId = selectedRowId.toString();
+  const newId = newRowData.id?.toString() || oldId;  // Si no se proporciona, mantener old
+  const idChanged = newId !== oldId;
+  if (idChanged) {
+    payload.id = newId;  // Incluir en update si cambió
+  }
+
   let error;
   if (selectedRowId === 'new-row') {
-    ({ error } = await supabase.from('tbestudiante').insert([{ ...payload, id: newRowData.id }]));
+    // Insert nuevo
+    ({ error } = await supabase.from('tbestudiante').insert([{ ...payload, id: newId }]));
+    if (error) {
+      if (error.code === '23505') return { ok: false, duplicate: true };
+      throw error;
+    }
+
+    // Asignar visibilidad (como antes)
+    const { error: visError } = await supabase.from('entity_visibility').upsert({
+      entity_type: 'estudiante',
+      entity_id: newId,
+      area_id: area.id,
+      visible: true,
+      created_by: (await supabase.auth.getUser()).data.user?.id
+    }, { onConflict: 'entity_type, entity_id, area_id' });
+    if (visError) throw visError;
   } else {
-    ({ error } = await supabase.from('tbestudiante').update(payload).eq('id', selectedRowId));
+    // Update existente (parcial, con posible cambio de ID)
+    ({ error } = await supabase.from('tbestudiante').update(payload).eq('id', oldId));
+    if (error) {
+      if (error.code === '23505') return { ok: false, duplicate: true };
+      throw error;  // RLS fallará aquí si no visible
+    }
+
+    // Si ID cambió, propagar a entity_visibility (y otras tablas tienen CASCADE)
+    if (idChanged) {
+      const { error: visUpdateError } = await supabase
+        .from('entity_visibility')
+        .update({ entity_id: newId })
+        .eq('entity_type', 'estudiante')
+        .eq('entity_id', oldId)
+        .eq('area_id', area.id);  // Solo para su área
+      if (visUpdateError) throw visUpdateError;
+    }
   }
-  if (error) throw error;
+
   return { ok: true };
 }
 
@@ -448,3 +607,79 @@ export async function filterProjectsAction(filters, currentSearchTerm = '') {
     }
     return data || [];
 }
+
+export async function checkStudentExistsAction(cedula: string) {
+    const supabase = await createClient();
+    const { data } = await supabase.from('tbestudiante').select('id').eq('id', cedula).single();
+    return !!data;
+}
+
+// assignStudentToAreaAction (actualizado)
+export async function assignStudentToAreaAction(cedula: string) {
+  const supabase = await createClient();
+  const area = await getUserAreaAction();  // Ya devuelve {id, name}
+
+  if (!area.id) {
+    throw new Error('No tienes área asignada. Contacta al administrador.');
+  }
+
+  const { error } = await supabase
+    .from('entity_visibility')
+    .upsert({  // upsert evita duplicados si ya existe
+      entity_type: 'estudiante',
+      entity_id: cedula,
+      area_id: area.id,
+      visible: true,
+      created_by: (await supabase.auth.getUser()).data.user?.id
+    }, {
+      onConflict: 'entity_type, entity_id, area_id'
+    });
+
+  if (error) throw error;
+  return { ok: true };
+}
+
+export async function deslistStudentAction(cedula: string) {
+    const supabase = await createClient();
+    const area = await getUserAreaAction();
+    if (!area.id) throw new Error('No tienes área asignada');
+    const { error } = await supabase.from('entity_visibility').update({ visible: false }).eq('entity_type', 'estudiante').eq('entity_id', cedula).eq('area_id', area.id);
+    if (error) throw error;
+    return { ok: true };
+}
+
+// Nuevas para tutores
+export async function checkTutorExistsAction(cedula: string) {
+    const supabase = await createClient();
+    const { data } = await supabase.from('tbtutor').select('cedula_tutor').eq('cedula_tutor', cedula).single();
+    return !!data;
+}
+
+export async function assignTutorToAreaAction(cedula: string) {
+    const supabase = await createClient();
+    const area = await getUserAreaAction();
+    if (!area.id) throw new Error('No tienes área asignada');
+    const { error } = await supabase
+        .from('entity_visibility')
+        .upsert({
+            entity_type: 'tutor',
+            entity_id: cedula,
+            area_id: area.id,
+            visible: true,
+            created_by: (await supabase.auth.getUser()).data.user?.id
+        }, {
+            onConflict: 'entity_type, entity_id, area_id'
+        });
+    if (error) throw error;
+    return { ok: true };
+}
+
+export async function deslistTutorAction(cedula: string) {
+    const supabase = await createClient();
+    const area = await getUserAreaAction();
+    if (!area.id) throw new Error('No tienes área asignada');
+    const { error } = await supabase.from('entity_visibility').update({ visible: false }).eq('entity_type', 'tutor').eq('entity_id', cedula).eq('area_id', area.id);
+    if (error) throw error;
+    return { ok: true };
+}
+
