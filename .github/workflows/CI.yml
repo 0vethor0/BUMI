@@ -36,4 +36,6 @@ jobs:
           npm ci
           npm rebuild
           npm cache clean --force
+      - name: Rebuild lightningcss native module
+        run: npm rebuild lightningcss || true
       - run: npm run build
