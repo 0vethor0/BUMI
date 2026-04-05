@@ -31,5 +31,9 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-      - run: npm ci
+      - name: Install and Rebuild dependencies
+        run: |
+          npm ci
+          npm rebuild
+          npm cache clean --force
       - run: npm run build
