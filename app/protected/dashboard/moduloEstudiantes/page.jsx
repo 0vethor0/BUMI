@@ -5,15 +5,18 @@ import Image from 'next/image';
 import styles from '../../../styles/ModuloEstudiantes.module.css';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/ui/Sidebar';
+import Swal from 'sweetalert2';
 import {
     listStudentsAction,
     searchStudentsAction,
     saveStudentAction,
-    deleteStudentAction,
-    listCareersAction
+    listCareersAction,
+    checkStudentExistsAction,    // Nueva
+    assignStudentToAreaAction,   // Nueva
+    deslistStudentAction,         // Nueva (reemplaza delete)            
 } from '@/app/protected/actions';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 const ModuloEstudiantes = () => {
     const router = useRouter();
@@ -39,7 +42,11 @@ const ModuloEstudiantes = () => {
             setSelectedRowId(null);
         } catch (error) {
             console.error('Error al cargar estudiantes:', error);
-            alert('Error al cargar los estudiantes: ' + (error.message || 'Error'));
+            Swal.fire({
+                title: "Error",
+                text: 'Error al cargar los estudiantes: ' + (error.message || 'Error'),
+                icon: "error"
+            });
         }
     }, []);
 
@@ -80,7 +87,11 @@ const ModuloEstudiantes = () => {
             setSelectedRowId(null);
         } catch (error) {
             console.error('Error al buscar estudiantes:', error);
-            alert('Error al buscar estudiantes: ' + (error.message || 'Error'));
+            Swal.fire({
+                title: "Error",
+                text: 'Error al buscar estudiantes: ' + (error.message || 'Error'),
+                icon: "error"
+            });
         }
     };
 
@@ -101,7 +112,11 @@ const ModuloEstudiantes = () => {
 
     const handleNewClick = () => {
         if (isEditing) {
-            alert('Por favor, guarda o cancela la edición actual antes de añadir una nueva fila.');
+            Swal.fire({
+                title: "Atención",
+                text: 'Por favor, guarda o cancela la edición actual antes de añadir una nueva fila.',
+                icon: "info"
+            });
             return;
         }
         setSelectedRowId('new-row');
@@ -118,7 +133,11 @@ const ModuloEstudiantes = () => {
 
     const handleModifyClick = async () => {
         if (!selectedRowId && !isEditing) {
-            alert('Por favor, selecciona una fila para modificar.');
+            Swal.fire({
+                title: "Atención",
+                text: 'Por favor, selecciona una fila para modificar.',
+                icon: "info"
+            });
             return;
         }
 
@@ -140,52 +159,140 @@ const ModuloEstudiantes = () => {
         } else {
             const isEmpty = !newRowData.id || !newRowData.primer_nomb || !newRowData.primer_ape;
             if (isEmpty) {
-                alert('Campos obligatorios: Cedula, Primer Nombre, Primer Apellido');
+                Swal.fire({
+                    title: "Campos incompletos",
+                    text: 'Campos obligatorios: Cedula, Primer Nombre, Primer Apellido',
+                    icon: "warning"
+                });
                 return;
             }
 
             try {
-                await saveStudentAction(selectedRowId, newRowData);
-                alert(selectedRowId === 'new-row' ? 'Estudiante creado con éxito' : 'Estudiante actualizado con éxito');
+                // Quitamos el chequeo manual previo para dejar que la BD lo maneje
+                // O lo mantenemos si queremos ser proactivos, pero el usuario dice que el error sigue apareciendo
+                // Así que vamos a capturar el error del saveStudentAction específicamente.
+
+                const resultSave = await saveStudentAction(selectedRowId, newRowData);
+
+                // Manejo de duplicado desde el retorno del action
+                if (resultSave.duplicate) {
+                    const result = await Swal.fire({
+                        title: "¿Deseas asignar el registro a tu area?",
+                        text: "El registro ya se encuentra en el sistema, puedes asignarlo a tu area o cancelar la operacion.",
+                        icon: "warning",
+                        showCancelButton: true,
+                        confirmButtonColor: "#3085d6",
+                        cancelButtonColor: "#d33",
+                        confirmButtonText: "Si, asignar!",
+                        cancelButtonText: "No, cancelar!"
+                    });
+                    
+                    if (result.isConfirmed) {
+                        setIsEditing(false);
+                        setSelectedRowId(null);
+                        await assignStudentToAreaAction(newRowData.id);
+                        await Swal.fire({
+                            title: "Asignado!",
+                            text: "El registro ha sido asignado a tu area.",
+                            icon: "success"
+                        });
+                        await fetchStudents();
+                    }
+                    return;
+                }
+
+                await Swal.fire({
+                    title: "Éxito",
+                    text: selectedRowId === 'new-row' ? 'Estudiante creado con éxito' : 'Estudiante actualizado con éxito',
+                    icon: "success"
+                });
 
                 await fetchStudents();
                 setIsEditing(false);
                 setSelectedRowId(null);
             } catch (error) {
                 console.error('Error al guardar estudiante:', error);
-                alert('Error al guardar: ' + (error.message || 'Error'));
+                
+                // Si el error es de llave duplicada (PKEY) - Backup por si acaso
+                if (error.message?.includes('duplicate key value violates unique constraint "tbestudiante_pkey"')) {
+                    const result = await Swal.fire({
+                        title: "¿Deseas asignar el registro a tu area?",
+                        text: "El registro ya se encuentra en el sistema, puedes asignarlo a tu area o cancelar la operacion.",
+                        icon: "warning",
+                        showCancelButton: true,
+                        confirmButtonColor: "#3085d6",
+                        cancelButtonColor: "#d33",
+                        confirmButtonText: "Si, asignar!",
+                        cancelButtonText: "No, cancelar!"
+                    });
+
+                    if (result.isConfirmed) {
+                        setIsEditing(false);
+                        setSelectedRowId(null);
+                        await assignStudentToAreaAction(newRowData.id);
+                        await Swal.fire({
+                            title: "Asignado!",
+                            text: "El registro ha sido asignado a tu area.",
+                            icon: "success"
+                        });
+                        await fetchStudents();
+                    }
+                    return;
+                }
+
+                if (resultSave.error?.code === '42501'){Swal.fire({
+                    title: "Error de permisos",
+                    text: "No se pudo asignar visibilidad. Verifica tus permisos o contacta al administrador.",
+                    icon: "error"
+                });}
             }
         }
     };
 
-    const handleDeleteClick = async () => {
-        if (!selectedRowId && !isEditing) {
-            alert('Por favor, selecciona una fila para eliminar.');
-            return;
-        }
-
+    const handleDeslistClick = async () => {  // Reemplaza handleDeleteClick
         if (isEditing) {
             setIsEditing(false);
             setSelectedRowId(null);
-            setNewRowData({
-                id: '',
-                primer_nomb: '',
-                segundo_nomb: '',
-                primer_ape: '',
-                segundo_ape: '',
-                id_carrera: ''
+            return;
+        }
+
+        if (!selectedRowId) {
+            Swal.fire({
+                title: "Atención",
+                text: 'Por favor, selecciona una fila para deslistar.',
+                icon: "info"
             });
-        } else {
-            if (window.confirm('¿Estás seguro de que quieres eliminar la fila seleccionada?')) {
-                try {
-                    await deleteStudentAction(selectedRowId);
-                    await fetchStudents();
-                    setSelectedRowId(null);
-                    alert('Fila eliminada.');
-                } catch (error) {
-                    console.error('Error al eliminar estudiante:', error);
-                    alert('Error al eliminar el estudiante');
-                }
+            return;
+        }
+
+        const result = await Swal.fire({
+            title: "¿Estás seguro?",
+            text: "Ocultarás este estudiante de tu área. No se eliminará del sistema.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Si, deslistar!",
+            cancelButtonText: "Cancelar"
+        });
+
+        if (result.isConfirmed) {
+            try {
+                await deslistStudentAction(selectedRowId);
+                await fetchStudents();
+                setSelectedRowId(null);
+                Swal.fire({
+                    title: "Deslistado!",
+                    text: "Estudiante deslistado de tu área.",
+                    icon: "success"
+                });
+            } catch (error) {
+                console.error('Error al deslistar estudiante:', error);
+                Swal.fire({
+                    title: "Error",
+                    text: 'Error al deslistar: ' + (error.message || 'Error'),
+                    icon: "error"
+                });
             }
         }
     };
@@ -199,12 +306,13 @@ const ModuloEstudiantes = () => {
     };
 
     const getButtonText = (buttonType) => {
+        
         if (isEditing) {
             if (buttonType === 'modify') return 'Guardar';
-            if (buttonType === 'delete') return 'Cancelar';
+            if (buttonType === 'deslist') return 'Cancelar';  // Cambiado de 'delete'
         }
         if (buttonType === 'modify') return 'Modificar';
-        if (buttonType === 'delete') return 'Eliminar';
+        if (buttonType === 'deslist') return 'Eliminar';  // llamado eliminar para darle la persecion al usuario de que el registro sera eliminado
         return '';
     };
 
@@ -229,19 +337,18 @@ const ModuloEstudiantes = () => {
                 </header>
 
                 <div className={styles.card}>
-
-                <div className="input-group mb-3">
-                            <input type="text" 
+                    <div className="input-group mb-3">
+                        <input type="text" 
                             className="form-control" 
                             placeholder="Buscar por cedula, nombre, entre otros..." 
                             aria-label="Buscar por título o ..." 
                             aria-describedby="button-addon2" 
                             value={searchTerm}
                             onChange={handleSearchChange}
-                            />
-                            <button className="btn btn-outline-secondary" type="button" id="button-addon2" onClick={handleSearchClick} >Buscar</button>
-                            <button className="btn btn-outline-secondary" type="button" id="button-addon2" onClick={handleResetSearch} >Limpiar</button>
-                        </div>
+                        />
+                        <button className="btn btn-outline-secondary" type="button" id="button-addon2" onClick={handleSearchClick} >Buscar</button>
+                        <button className="btn btn-outline-secondary" type="button" id="button-addon2" onClick={handleResetSearch} >Limpiar</button>
+                    </div>
 
                     <div className={styles.dataTableContainer}>
                         <table className={styles.dataTable} id="studentsTable">
@@ -256,7 +363,12 @@ const ModuloEstudiantes = () => {
                             <tbody>
                                 {isEditing && selectedRowId === 'new-row' && (
                                     <tr className={styles.selected}>
-                                        <td><input type="text" value={newRowData.id} onChange={(e) => handleInputChange(e, 'id')} placeholder="Carnet/ID" /></td>
+                                        <td><input 
+                                        
+                                        type="text" value={newRowData.id} onChange={(e) => handleInputChange(e, 'id')} placeholder="Cedula. Ej: V12345678" 
+                                        />
+                                        <span class="error-msg"></span>
+                                        </td>
                                         <td>
                                             <input type="text" value={newRowData.primer_nomb} onChange={(e) => handleInputChange(e, 'primer_nomb')} placeholder="Primer Nombre" />
                                             <input type="text" value={newRowData.segundo_nomb} onChange={(e) => handleInputChange(e, 'segundo_nomb')} placeholder="Segundo Nombre" />
@@ -329,7 +441,7 @@ const ModuloEstudiantes = () => {
                     </div>
 
                     <div className={styles.actions}>
-                        <button className="btn btn-outline-secondary" type="button" id="button-addon2" >Asignar Agrupacion</button>
+                        <button className="btn btn-outline-secondary" type="button" id="button-addon2" onClick={() => router.push('/protected/dashboard/moduloGrupos')}>Asignar Agrupación</button>
                         <button className="btn btn-outline-secondary" type="button" id="button-addon2" onClick={handleNewClick} disabled={isEditing}>Nuevo</button>
                         <button
                             className="btn btn-outline-secondary" type="button" id="button-addon2"
@@ -340,11 +452,11 @@ const ModuloEstudiantes = () => {
                         </button>
                         <button
                             className={`${styles.button} ${styles.buttonDanger}`}
-                            id="deleteBtn"
-                            onClick={handleDeleteClick}
-                            disabled={!selectedRowId && !isEditing}
+                            id="deslistBtn"  // Cambiado de deleteBtn
+                            onClick={handleDeslistClick}
+                            disabled={!selectedRowId}
                         >
-                            {getButtonText('delete')}
+                            {getButtonText('deslist')} 
                         </button>
                     </div>
                 </div>

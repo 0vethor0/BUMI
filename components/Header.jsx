@@ -38,7 +38,7 @@ return (
             </div>
 
             <nav className={`${styles.nav} ${isMenuOpen ? styles.navOpen : ''}`}>
-                <Link href="#manual" className={styles.navLink}>Manual del Usuario</Link>
+                <Link href="https://github.com/0vethor0/BUMI" className={styles.navLink}>Repositorio de GitHub</Link>
                 <Link href="https://portafolio-vincent-dev.vercel.app" className={styles.navLink}>Contacta con el desarrollador</Link>
                 <div className={styles.authButtons}>
                     <Link href="/auth/sign-up" className="btn-register">Register</Link>
