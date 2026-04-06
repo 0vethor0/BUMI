@@ -21,7 +21,7 @@ jobs:
         id: release
         with:
           release-type: node 
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.RELEASE_BOT_TOKEN }}
 
   generate-release-notes:
     runs-on: ubuntu-latest
@@ -54,8 +54,11 @@ jobs:
               ]
             }' > ai_response.json
           
-          # Corrección: Se ajustó la ruta de jq para acceder al primer elemento de choices
-          echo "PROMPT_RESPONSE=$(jq -r '.choices[0].message.content' ai_response.json)" >> $GITHUB_ENV
+          # Extraer y manejar notas multilínea de forma segura para GITHUB_ENV
+          CONTENT=$(jq -r '.choices[0].message.content' ai_response.json)
+          echo "PROMPT_RESPONSE<<EOF" >> $GITHUB_ENV
+          echo "$CONTENT" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
       - name: Update GitHub Release with AI Notes
         uses: softprops/action-gh-release@v2
