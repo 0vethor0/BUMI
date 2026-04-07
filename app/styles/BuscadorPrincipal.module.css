@@ -65,6 +65,20 @@
     padding: 0 20px;
 }
 
+.mainSearchContainer {
+    max-width: 1200px;
+    /* Cambio: reemplazar margin: 20px auto por padding vertical para evitar desbordamiento */
+    margin: 0 auto;
+    padding: 20px 20px;
+    /* Se añade flex: 1 para asegurar que el contenedor se expanda
+    y empuje el footer hacia la base del viewport cuando el
+       contenido es escaso, evitando que colapse hacia arriba. */
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+
 .searchSection {
     margin-bottom: 20px;
 }

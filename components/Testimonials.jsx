@@ -8,19 +8,19 @@ import styles from '../app/styles/Testimonials.module.css';
         name: 'Ing. Maria Cabrera',
         role: 'UNEFA 2020',
         borderColor: '#e74c3c',
-        quote: '"La universidad posee de un sistema que resuelve todos los dolores de cabeza por los estudiantes. Y a la hora de la verdad, un sistema capaz de para resolver a una emergencia de forma eficiente"'
+        quote: '"La universidad carece de un sistema que centralice los trabajos realizados por los estudiantes. En consecuencia, no estamos capacitados para responder ante una emergencia de forma eficiente."'
     },
     {
         name: 'Lic. Nayeli',
         role: 'UNEFA 2024',
         borderColor: '#49b5ac',
-        quote: '"Es esencial un sistema de este tipo. Porque muchas veces cuando buscamos un antecedente, no está claro en todo el trabajo, en general, lo de internet incluido y en ciertos puntuales como: el título, los objetivos, el resumen, entre otros"'
+        quote: '"Un sistema de este tipo es esencial, ya que, al buscar antecedentes, no siempre interesa leer el trabajo completo; por el contrario, el valor radica en datos puntuales como el título, los objetivos y el resumen."'
     },
     {
         name: 'Doctora Betty Juarez',
         role: 'UNEFA 2025',
         borderColor: '#f1c40f',
-        quote: '"Un sistema para llevar el registro de proyectos de investigación, con muy útil para el proceso de consulta por parte de cualquier persona externay y dentro de la universidad"'
+        quote: '"Un sistema para llevar el registro de proyectos de investigación es muy útil para el proceso de consulta de cualquier persona, tanto dentro como fuera de la universidad."'
     }
     ];
 

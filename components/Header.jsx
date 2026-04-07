@@ -10,9 +10,9 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
 return (
-    <header className={styles.header}>
-        <div className={styles.container}>
-            <div className={styles.logoSection}>
+    <header className={styles.header} suppressHydrationWarning>
+        <div className={styles.container} suppressHydrationWarning>
+            <div className={styles.logoSection} suppressHydrationWarning>
                 
                 <Link href="/" className={styles.logoLink}> 
                     

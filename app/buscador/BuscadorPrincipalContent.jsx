@@ -6,6 +6,7 @@ import styles from '../styles/BuscadorPrincipal.module.css';
 import { listProjectsAction, searchProjectsAction, fetchAllAreasAction, filterProjectsAction } from '@/app/protected/actions';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import Swal from 'sweetalert2';
 
 const BuscadorPrincipalContent = () => {
     const searchParams = useSearchParams();
@@ -37,7 +38,11 @@ const BuscadorPrincipalContent = () => {
             setProjects(mappedProjects);
         } catch (error) {
             console.error('Error al cargar proyectos:', error);
-            alert('Error al cargar los proyectos');
+            Swal.fire({
+                title: "Error",
+                text: "Error al cargar los proyectos",
+                icon: "error"
+            });
         }
     }, []);
 
@@ -60,15 +65,24 @@ const BuscadorPrincipalContent = () => {
 
     const handleSearchClick = async () => {
         if (!searchTerm.trim()) {
-            alert('Por favor, ingrese un título para buscar.');
+            Swal.fire({
+                title: "Atención",
+                text: "Por favor, ingrese un título para buscar.",
+                icon: "info"
+            });
             setProjects([]);
             return;
         }
         try {
             const data = await searchProjectsAction(searchTerm);
             if (!data || data.length === 0) {
-                alert('No se encontró un proyecto con ese título.');
+                Swal.fire({
+                    title: "Sin resultados",
+                    text: "No se encontró un proyecto con ese título.",
+                    icon: "warning"
+                });
                 setProjects([]);
+                
             } else {
                 const mappedProjects = data.map(project => ({
                     idproyecto: project.id,
@@ -81,7 +95,11 @@ const BuscadorPrincipalContent = () => {
             }
         } catch (error) {
             console.error('Error al buscar proyectos:', error);
-            alert('Error al buscar proyectos');
+            Swal.fire({
+                title: "Error",
+                text: "Error al buscar proyectos",
+                icon: "error"
+            });
         }
     };
 
@@ -99,11 +117,12 @@ const BuscadorPrincipalContent = () => {
     };
 
     return (
-        <div className="min-h-screen flex flex-col bg-background">
+        <div className="min-h-screen flex flex-col bg-background" suppressHydrationWarning>
             <Header />
 
-            <div className={styles.container}>
-                <div className={styles.searchSection}>
+            {/* Contenedor principal ajustado para evitar colapso del footer (mainSearchContainer aplica flex: 1) */}
+            <div className={`${styles.container} ${styles.mainSearchContainer}`} suppressHydrationWarning>
+                <div className={styles.searchSection} suppressHydrationWarning>
                     <div className={styles.searchBar}>
                         <div className="input-group mb-3">
                             <input type="text" className="form-control" value={searchTerm} onChange={handleSearchChange} aria-describedby="button-addon2" />
