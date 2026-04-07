@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.2.0](https://github.com/0vethor0/BUMI/compare/v3.1.0...v3.2.0) (2026-04-07)
+
+
+### Features
+
+* integracion de varios cambios de diseño, resposividad, favicon, etc ([51dc2e1](https://github.com/0vethor0/BUMI/commit/51dc2e1f178d7bd931ee206906a69671cd76670c))
+
 ## [3.1.0](https://github.com/0vethor0/BUMI/compare/v3.0.0...v3.1.0) (2026-04-06)
 
 
