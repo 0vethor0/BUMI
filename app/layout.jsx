@@ -1,14 +1,18 @@
+import { icons } from 'lucide-react'
 import './globals.css'
 import '@fortawesome/fontawesome-free/css/all.min.css'
 
 export const metadata = {
   title: 'BUMI-UNEFA',
   description: 'Buscador de Material de Investigación de la UNEFA',
+  icons: {
+      icon: '/icon.png',
+  },
 }
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
       <head>
         <link
           href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
@@ -27,7 +31,7 @@ export default function RootLayout({ children }) {
           defer
         />
       </head>
-      <body>{children}</body>
+      <body suppressHydrationWarning>{children}</body>
     </html>
   )
 }

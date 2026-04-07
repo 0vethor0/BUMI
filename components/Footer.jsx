@@ -39,19 +39,18 @@ const Footer = () => {
           <div className={styles.linkSection}>
             <h4 className={styles.linkTitle}>Comunidad Unefista</h4>
             <ul className={styles.linkList}>
-              <li><a href="#">Eventos</a></li>
-              <li><a href="#">Blog</a></li>
-              <li><a href="#">Podcast</a></li>
-              <li><a href="#">UneFit.com</a></li>
+            
+              <li><a href="http://www.unefa.edu.ve/CMS/administrador/vistas/archivos/OFERTA-ACADEMICA-2025.pdf">Oferta Academica</a></li>
+              <li><a href="http://aplicaciones.unefa.edu.ve/SC3_unefa/modulo/Ms34mun3Pr4Pr/">SICEU</a></li>
+              <li><a href="http://www.unefa.edu.ve/portal/">Unefa.edu.ve</a></li>
             </ul>
           </div>
           <div className={styles.linkSection}>
-            <h4 className={styles.linkTitle}>Redes Sociales</h4>
+            <h4 className={styles.linkTitle}>Redes Sociales UNEFA nucleo Yaracuy</h4>
             <ul className={styles.linkList}>
-              <li><a href="#">Discord</a></li>
-              <li><a href="#">Instagram</a></li>
-              <li><a href="#">Twitter</a></li>
-              <li><a href="#">Facebook</a></li>
+              
+              <li><a href="https://www.instagram.com/unefanucleoyaracuy_ve/">Instagram</a></li>
+              <li><a href="https://www.facebook.com/groups/2487908341354828">Facebook</a></li>
             </ul>
           </div>
         </div>

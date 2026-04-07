@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import styles from '../../../styles/ModuloGrupos.module.css';
 import Sidebar from '@/components/ui/Sidebar';
+import Swal from 'sweetalert2';
 import {
   getUserAreaAction,
   groupsListAction,
@@ -81,7 +82,11 @@ const ModuloGrupos = () => {
             setGroups(result || []);
         } catch (error) {
             console.error('Error fetching groups:', error);
-            alert('No se pudieron cargar los grupos');
+            Swal.fire({
+                title: "Error",
+                text: "No se pudieron cargar los grupos",
+                icon: "error"
+            });
             setGroups([]);
         } finally {
             setLoading(false);
@@ -124,7 +129,11 @@ const ModuloGrupos = () => {
 
     const handleNewClick = () => {
         if (!userAreaId) {
-            alert('No puedes crear grupos sin un área asignada.');
+            Swal.fire({
+                title: "No puedes crear grupos",
+                text: "No puedes crear grupos sin un área asignada.",
+                icon: "warning"
+            });
             return;
         }
         setIsWizardOpen(true);
@@ -142,18 +151,30 @@ const ModuloGrupos = () => {
 
     const handleEditClick = () => {
         if (!selectedRowKey) {
-            alert('Selecciona un grupo para modificar.');
+            Swal.fire({
+                title: "Atención",
+                text: "Selecciona un grupo para modificar.",
+                icon: "info"
+            });
             return;
         }
 
         const groupToEdit = groups.find(g => g.compositeKey === selectedRowKey);
         if (!groupToEdit) {
-            alert('Grupo no encontrado.');
+            Swal.fire({
+                title: "Error",
+                text: "Grupo no encontrado.",
+                icon: "error"
+            });
             return;
         }
 
         if (groupToEdit.id_area_investigacion !== userAreaId) {
-            alert('No tienes permiso para modificar grupos de otras áreas.');
+            Swal.fire({
+                title: "Permiso denegado",
+                text: "No tienes permiso para modificar grupos de otras áreas.",
+                icon: "error"
+            });
             return;
         }
 
@@ -217,31 +238,62 @@ const ModuloGrupos = () => {
 
     const handleDeleteClick = async () => {
         if (!selectedRowKey) {
-            alert('Selecciona un grupo para eliminar.');
+            Swal.fire({
+                title: "Atención",
+                text: "Selecciona un grupo para eliminar.",
+                icon: "info"
+            });
             return;
         }
 
         const group = groups.find(g => g.compositeKey === selectedRowKey);
         if (!group) {
-            alert('Grupo no encontrado.');
+            Swal.fire({
+                title: "Error",
+                text: "Grupo no encontrado.",
+                icon: "error"
+            });
             return;
         }
 
         if (group.id_area_investigacion !== userAreaId) {
-            alert('No tienes permiso para eliminar grupos de otras áreas.');
+            Swal.fire({
+                title: "Permiso denegado",
+                text: "No tienes permiso para eliminar grupos de otras áreas.",
+                icon: "error"
+            });
             return;
         }
 
-        if (window.confirm(`¿Estás seguro de eliminar el grupo "${group.nombre_grupo}"?`)) {
+        const result = await Swal.fire({
+            title: "¿Estás seguro?",
+            text: `¿Estás seguro de eliminar el grupo "${group.nombre_grupo}"?`,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Sí, eliminar",
+            cancelButtonText: "Cancelar"
+        });
+
+        if (result.isConfirmed) {
             setLoading(true);
             try {
                 await deleteGroupByNameAction(group.nombre_grupo, group.id_proyecto, group.periodo_academico);
-                alert(`Grupo "${group.nombre_grupo}" eliminado correctamente`);
+                Swal.fire({
+                    title: "Eliminado",
+                    text: `Grupo "${group.nombre_grupo}" eliminado correctamente`,
+                    icon: "success"
+                });
                 fetchGroups();
                 setSelectedRowKey(null);
             } catch (error) {
                 console.error('Error al eliminar grupo:', error);
-                alert('Error al eliminar grupo: ' + (error.message || 'Error desconocido'));
+                Swal.fire({
+                    title: "Error",
+                    text: 'Error al eliminar grupo: ' + (error.message || 'Error desconocido'),
+                    icon: "error"
+                });
             } finally {
                 setLoading(false);
             }
@@ -251,15 +303,27 @@ const ModuloGrupos = () => {
     const handleWizardNext = () => {
         // Validaciones por paso
         if (currentStep === 1 && wizardData.selectedStudents.length === 0) {
-            alert('Debes seleccionar al menos un estudiante.');
+            Swal.fire({
+                title: "Selección requerida",
+                text: "Debes seleccionar al menos un estudiante.",
+                icon: "warning"
+            });
             return;
         }
         if (currentStep === 2 && !wizardData.id_proyecto) {
-            alert('Debes seleccionar un proyecto.');
+            Swal.fire({
+                title: "Selección requerida",
+                text: "Debes seleccionar un proyecto.",
+                icon: "warning"
+            });
             return;
         }
         if (currentStep === 3 && !wizardData.periodo) {
-            alert('Debes ingresar el periodo académico.');
+            Swal.fire({
+                title: "Campo requerido",
+                text: "Debes ingresar el periodo académico.",
+                icon: "warning"
+            });
             return;
         }
         if (currentStep < 4) {
@@ -275,7 +339,11 @@ const ModuloGrupos = () => {
 
     const handleWizardFinish = async () => {
         if (!wizardData.selectedStudents.length || !wizardData.id_proyecto || !wizardData.periodo) {
-            alert('Faltan datos requeridos.');
+            Swal.fire({
+                title: "Datos incompletos",
+                text: "Faltan datos requeridos.",
+                icon: "error"
+            });
             return;
         }
 
@@ -303,10 +371,13 @@ const ModuloGrupos = () => {
                 nombreGrupo: wizardData.nombreGrupo,
             });
 
-            alert(editingGroupKey 
-                ? `Grupo "${wizardData.nombreGrupo}" actualizado exitosamente` 
-                : `Se creó el grupo "${wizardData.nombreGrupo}" con ${wizardData.selectedStudents.length} estudiante(s)`
-            );
+            Swal.fire({
+                title: "¡Éxito!",
+                text: editingGroupKey 
+                    ? `Grupo "${wizardData.nombreGrupo}" actualizado exitosamente` 
+                    : `Se creó el grupo "${wizardData.nombreGrupo}" con ${wizardData.selectedStudents.length} estudiante(s)`,
+                icon: "success"
+            });
             
             setIsWizardOpen(false);
             setEditingGroupKey(null);
@@ -315,7 +386,11 @@ const ModuloGrupos = () => {
             fetchGroups();
         } catch (error) {
             console.error('Error al guardar grupos:', error);
-            alert('Error al guardar los grupos: ' + (error.message || 'Error desconocido'));
+            Swal.fire({
+                title: "Error",
+                text: 'Error al guardar los grupos: ' + (error.message || 'Error desconocido'),
+                icon: "error"
+            });
         } finally {
             setLoading(false);
         }

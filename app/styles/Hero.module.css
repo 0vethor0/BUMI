@@ -1,0 +1,153 @@
+.header {
+    padding: 2rem 1rem;
+    background-color: #ffffff;
+    
+}
+
+.headerMain {
+    max-width: 1400px;
+    min-height: 600px;
+    height: auto;
+    margin: 0 auto;
+    position: relative;
+    box-shadow: 0 10px 15px rgba(26,44,235,0.12);
+    overflow: hidden;
+    background-color: rgb(255, 255, 255);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Capa que contiene todo lo demás encima del fondo */
+.contentOverlay {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 2rem;
+    flex: 1;
+    padding: 2rem;
+}
+
+/* Imagen de la izquierda (Card) */
+.headerImageCard {
+    grid-column: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cardImage {
+    max-height: 400px;
+    width: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 0 25px #49b5ac);
+}
+
+/* Sección de texto */
+.textSection {
+    grid-column: 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    position: relative; /* Contenedor de referencia para el logo de fondo */
+    padding: 1rem;
+}
+
+/* Logo de Fondo con transparencia: Posicionado relativo a textSection */
+.logoFondo {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: auto;
+    max-width: 500px; /* Tamaño máximo para que no se desborde */
+    opacity: 0.15; /* Transparencia solicitada */
+    z-index: -1; /* Detrás del texto */
+    pointer-events: none;
+    object-fit: contain;
+}
+
+/* Buscador en la parte inferior centrado */
+.headerSearchSection {
+    grid-column: 1 / span 2;
+    background-color: #49b5ac;
+    padding: 1.5rem;
+    display: flex;
+    justify-content: center;
+    border-radius: 10px;
+    align-items: center;
+    margin-top: auto;
+}
+
+.description {
+    font-family: 'Puls Jakarta Sans', Arial, Helvetica, sans-serif;
+    font-size: 1.5rem;
+    color: #444;
+    line-height: 1.4;
+}
+
+.title {
+    font-family: 'Arial', sans-serif;
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #000000;
+    margin-bottom: 1rem;
+    line-height: 1.2;
+}
+
+/* Media Query para tablets y laptops pequeñas */
+@media (max-width: 1024px) {
+    .title {
+        font-size: 2rem;
+    }
+    .description {
+        font-size: 1.2rem;
+    }
+    .cardImage {
+        max-height: 300px;
+    }
+}
+
+/* Media Query para móviles */
+@media (max-width: 768px) {
+    .contentOverlay {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto;
+        text-align: center;
+        gap: 1.5rem;
+    }
+    .textSection {
+        grid-column: 1;
+        align-items: center;
+    }
+    .headerImageCard {
+        grid-column: 1;
+        order: -1; /* Muestra la imagen arriba del texto en móvil */
+    }
+    .cardImage {
+        max-height: 200px;
+    }
+    .title {
+        font-size: 1.8rem;
+    }
+    .description {
+        font-size: 1.1rem;
+    }
+    .headerMain {
+        min-height: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .title {
+        font-size: 1.5rem;
+    }
+    .description {
+        font-size: 1rem;
+    }
+    .contentOverlay {
+        padding: 1rem;
+    }
+}

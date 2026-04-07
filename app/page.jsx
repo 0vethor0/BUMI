@@ -1,14 +1,15 @@
 'use client';
 
-import Image from 'next/image';
 import Header from '@/components/Header';
 import Testimonials from '@/components/Testimonials';
 import Footer from '@/components/Footer';
-import { listProjectsAction, searchProjectsAction, fetchAllAreasAction, filterProjectsAction } from '@/app/protected/actions';
-
+import BannerPatriotico from '@/components/BannerPatriotico';
+import Hero from '@/components/Hero';
+import Image from 'next/image';
+import Swal from 'sweetalert2';
 
 const PaginaPrincipal = () => {
-  const handleBuscarClick = () => {
+    const handleBuscarClick = () => {
     const searchInput = document.querySelector('input[placeholder="¿Qué necesitas buscar?"]');
     const searchTerm = searchInput?.value || '';
     
@@ -16,42 +17,20 @@ const PaginaPrincipal = () => {
       window.location.href = `/buscador?q=${encodeURIComponent(searchTerm)}`;
     } else {
       window.location.href = "/buscador";
-      alert("No se encontraron coincidencias para la búsqueda");
+      Swal.fire({
+        title: "Sin coincidencias",
+        text: "No se encontraron coincidencias para la búsqueda",
+        icon: "info"
+      });
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-background"> {/* Exacto Index.tsx */}
       <Header />
+      <BannerPatriotico />
       <main className="flex-1"> {/* flex-1 para Footer sticky abajo */}
-        {/* TU HERO/SEARCH (movido de viejo <header>, clases globals.css intactas) */}
-        <header className="header"> {/* Mantengo tu .header globals (teal) */}
-          <div className="header-main">
-            <div className="header-search-section">
-              <h1>BUSCADOR DE MATERIAL DE INVESTIGACIÓN</h1>
-              <p>
-                Bumi es básicamente un Google Academy, un sitio web al cual puedes
-                acceder desde cualquier parte del mundo para consultar los
-                trabajos de investigación hechos por la comunidad de estudiantes e
-                investigadores Unefista.....
-              </p>
-              
-              <div className="input-group mb-3">
-                <input type="text" className="form-control" placeholder="¿Qué necesitas buscar?" aria-label="¿Qué necesitas buscar?" aria-describedby="button-addon2" />
-                <button className="btn btn-outline-secondary" type="button" id="button-addon2" onClick={handleBuscarClick}>Buscar</button>
-              </div>
-            </div>
-            <div className="header-image-card">
-              <Image
-                src="/image/logo.png"
-                alt="BUMI Logo con birrete"
-                width={280}
-                height={200}
-                className="card-image"
-              />
-            </div>
-          </div>
-        </header>
+        <Hero handleBuscarClick={handleBuscarClick} />
 
         {/* TU MAIN CONTENT (intacto, globals.css) */}
         <main className="main-content">

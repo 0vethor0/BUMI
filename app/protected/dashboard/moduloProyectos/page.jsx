@@ -5,6 +5,7 @@ import Image from 'next/image';
 import styles from '../../../styles/ModuloProyectos.module.css';
 import PDFUploader from '../../../../components/logica_PDFdownload/PDFUploader';
 import Sidebar from '@/components/ui/Sidebar';
+import Swal from 'sweetalert2';
 import {
     getUserAreaAction,
     fetchAllAreasAction,
@@ -91,7 +92,11 @@ const ModuloProyectos = () => {
 
     const handlePdfUploadSuccess = (publicUrl) => {
         setNewRowData(prev => ({ ...prev, pdf_url: publicUrl }));
-        alert('¡PDF subido exitosamente!');
+        Swal.fire({
+            title: "¡Éxito!",
+            text: "¡PDF subido exitosamente!",
+            icon: "success"
+        });
     };
 
     const handleSearchClick = async () => { // funcion para buscar proyectos por titulo, resumen o tipo de investigacion
@@ -104,7 +109,11 @@ const ModuloProyectos = () => {
             const data = await searchProjectsAction(searchTerm);
             setProjects(data);
         } catch (error) {
-            alert('Error al buscar proyectos: ' + error.message);
+            Swal.fire({
+                title: "Error",
+                text: 'Error al buscar proyectos: ' + error.message,
+                icon: "error"
+            });
         } finally {
             setLoading(false);
         }
@@ -125,13 +134,21 @@ const ModuloProyectos = () => {
 
     const handleNewClick = () => {// funcion para crear un nuevo proyecto
         if (isEditing) {
-            alert('Termina o cancela la edición actual primero.');
+            Swal.fire({
+                title: "Atención",
+                text: "Termina o cancela la edición actual primero.",
+                icon: "warning"
+            });
             return;
         }
 
         // Validación de seguridad: debe tener área asignada
         if (!userAreaId) {
-            alert('No puedes crear proyectos porque no tienes un área de investigación asignada.');
+            Swal.fire({
+                title: "No puedes crear proyectos",
+                text: "No puedes crear proyectos porque no tienes un área de investigación asignada.",
+                icon: "error"
+            });
             return;
         }
 
@@ -153,14 +170,22 @@ const ModuloProyectos = () => {
     const handleModifyClick = async () => {
         if (!isEditing) {
             if (!selectedRowId) {
-                alert('Selecciona un proyecto para modificar.');
+                Swal.fire({
+                    title: "Atención",
+                    text: "Selecciona un proyecto para modificar.",
+                    icon: "info"
+                });
                 return;
             }
             const project = projects.find(p => p.id === selectedRowId);
 
             // SEGURIDAD: Solo permitir editar si el proyecto es del área del usuario
             if (project.id_area_investigacion !== userAreaId) {
-                alert(`No tienes permiso para modificar este proyecto. Pertenece a el área: ${areasInvestigacion.find(a => a.id === project.id_area_investigacion)?.nomb_area || 'Otra'}`);
+                Swal.fire({
+                    title: "Permiso denegado",
+                    text: `No tienes permiso para modificar este proyecto. Pertenece a el área: ${areasInvestigacion.find(a => a.id === project.id_area_investigacion)?.nomb_area || 'Otra'}`,
+                    icon: "error"
+                });
                 return;
             }
 
@@ -177,7 +202,11 @@ const ModuloProyectos = () => {
         const requiredFields = ['titulo'];
         const missing = requiredFields.find(field => !newRowData[field]?.toString().trim());
         if (missing) {
-            alert(`El campo "${missing}" es obligatorio.`);
+            Swal.fire({
+                title: "Campo obligatorio",
+                text: `El campo "${missing}" es obligatorio.`,
+                icon: "warning"
+            });
             return;
         }
 
@@ -196,13 +225,21 @@ const ModuloProyectos = () => {
 
             await saveProjectAction(selectedRowId, payload);
 
-            alert('Operación exitosa');
+            Swal.fire({
+                title: "Éxito",
+                text: "Operación exitosa",
+                icon: "success"
+            });
             await fetchProjects();
             setIsEditing(false);
             setSelectedRowId(null);
         } catch (error) {
             console.error('Error al guardar:', error);
-            alert('Error: ' + (error.message || 'No tienes permisos para realizar esta acción.'));
+            Swal.fire({
+                title: "Error",
+                text: 'Error: ' + (error.message || 'No tienes permisos para realizar esta acción.'),
+                icon: "error"
+            });
         } finally {
             setLoading(false);
         }
@@ -216,25 +253,52 @@ const ModuloProyectos = () => {
         }
 
         if (!selectedRowId) {
-            alert('Selecciona un proyecto para eliminar.');
+            Swal.fire({
+                title: "Atención",
+                text: "Selecciona un proyecto para eliminar.",
+                icon: "info"
+            });
             return;
         }
 
         const project = projects.find(p => p.id === selectedRowId);
         if (project.id_area_investigacion !== userAreaId) {
-            alert('No tienes permiso para eliminar proyectos de otras áreas.');
+            Swal.fire({
+                title: "Permiso denegado",
+                text: "No tienes permiso para eliminar proyectos de otras áreas.",
+                icon: "error"
+            });
             return;
         }
 
-        if (window.confirm('¿Estás seguro de eliminar este proyecto?')) {
+        const result = await Swal.fire({
+            title: "¿Estás seguro?",
+            text: "¿Estás seguro de eliminar este proyecto?",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Sí, eliminar",
+            cancelButtonText: "Cancelar"
+        });
+
+        if (result.isConfirmed) {
             setLoading(true);
             try {
                 await deleteProjectAction(selectedRowId);
                 await fetchProjects();
                 setSelectedRowId(null);
-                alert('Proyecto eliminado');
+                Swal.fire({
+                    title: "Eliminado",
+                    text: "Proyecto eliminado con éxito.",
+                    icon: "success"
+                });
             } catch (error) {
-                alert('Error al eliminar: ' + error.message);
+                Swal.fire({
+                    title: "Error",
+                    text: 'Error al eliminar: ' + error.message,
+                    icon: "error"
+                });
             } finally {
                 setLoading(false);
             }
@@ -249,6 +313,45 @@ const ModuloProyectos = () => {
     const getButtonText = (type) => {
         if (isEditing) return type === 'modify' ? 'Guardar' : 'Cancelar';
         return type === 'modify' ? 'Modificar' : 'Eliminar';
+    };
+
+    /**
+     * Función para el renderizado condicional de la sección del PDF.
+     * Evalúa si se está agregando un nuevo registro o modificando uno existente.
+     * En caso de modificación, oculta el componente de carga de archivos (PDFUploader).
+     */
+    const renderPdfUploaderSection = () => {
+        // Evaluamos si se trata de un nuevo registro mediante el ID especial 'new-row'
+        const isNewRecord = selectedRowId === 'new-row';
+
+        return (
+            <div className={styles.formGroup}>
+                <label>Documento PDF *</label>
+                
+                {/* 
+                  * Lógica Condicional: 
+                  * Solo renderizamos el cargador (PDFUploader) si es un registro nuevo.
+                  * Si es una modificación, se omite el botón de carga según lo solicitado.
+                */}
+                {isNewRecord && (
+                    <PDFUploader onUploadSuccess={handlePdfUploadSuccess} />
+                )}
+
+                {/* Siempre mostramos la vista previa si el proyecto ya tiene un PDF asignado */}
+                {newRowData.pdf_url && (
+                    <>
+                        <p className="text-xs text-green-600 mt-2">
+                            {isNewRecord ? 'PDF listo para guardar' : 'Archivo actual del proyecto'}
+                        </p>
+                        <iframe 
+                            src={newRowData.pdf_url} 
+                            style={{ width: '100%', height: '500px', border: '1px solid #ddd' }}
+                            title="Previsualización del Documento"
+                        ></iframe>
+                    </>
+                )}
+            </div>
+        );
     };
 
     return (
@@ -373,17 +476,8 @@ const ModuloProyectos = () => {
                                         <input type="hidden" name="id_area_investigacion" value={userAreaId || ''} />
                                     </div>
 
-                                    <div className={styles.formGroup}>
-                                        <label>Documento PDF *</label>
-                                        <PDFUploader onUploadSuccess={handlePdfUploadSuccess} />
-                                        {newRowData.pdf_url && (
-                                            <>
-                                                <p className="text-xs text-green-600">PDF listo para guardar</p>
-                                                <iframe src={newRowData.pdf_url} style={{ width: '100%', height: '500px' }}></iframe>
-                                            </>
-                                        )}
-                                        
-                                    </div>
+                                    {/* --- RENDERIZADO CONDICIONAL DE LA SECCIÓN PDF --- */}
+                                    {renderPdfUploaderSection()}
                                 </div>
                             </div>
 
