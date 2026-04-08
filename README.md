@@ -1,33 +1,65 @@
-# BUMI-UNEFA
+# 📚 BUMI- Buscador de Material de Investigación de la UNEFA Yaracuy
 
-### Descripción
+[![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js)](https://nextjs.org)
+[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?logo=supabase)](https://supabase.com)
+[![Vercel](https://img.shields.io/badge/Vercel-Deploy-black?logo=vercel)](https://vercel.com)
+[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
-BUMI-UNEFA (Buscador de Material de Investigación de la UNEFA) es una aplicación web diseñada para centralizar y optimizar la gestión de materiales e informes de investigación generados en la Universidad Nacional Experimental Politécnica de la Fuerza Armada Nacional Bolivariana (UNEFA). Este repositorio digital dinámico permite a estudiantes, profesores, investigadores y cualquier persona interesada registrar, organizar, consultar y descargar documentos académicos como proyectos de grado, tesis, artículos científicos, informes técnicos y presentaciones.
 
-BUMI-UNEFA supera las limitaciones de los sistemas de archivo tradicionales al ofrecer una plataforma colaborativa con una interfaz intuitiva, fomentando el descubrimiento de investigaciones, la replicación de estudios y la colaboración académica. Su visión es convertirse en el eje central de la gestión del conocimiento en la UNEFA, democratizando el acceso al conocimiento y elevando la calidad y visibilidad de la producción científica de la institución.
+## 🎯 Descripción
 
-### Características principales
+**BUMI-UNEFA** (Buscador de Material de Investigación de la UNEFA) es un **repositorio institucional open-source** diseñado para centralizar y optimizar la gestión de materiales e informes de investigación generados en instituciones académicas. Este sistema permite registrar, organizar, consultar y descargar documentos académicos como:
 
-- **Centralización de recursos**: Almacena y organiza materiales académicos en un solo lugar.
-- **Interfaz amigable**: Diseñada para usuarios de todos los niveles tecnológicos.
-- **Colaboración académica**: Facilita la interacción y el descubrimiento de investigaciones.
-- **Arquitectura moderna**: Frontend en **Next.js** y backend migrado a **Supabase** (PostgreSQL + autenticación gestionada).
-- **Almacenamiento de documentos PDF**: Uso de **Cloudflare R2** como almacenamiento S3-compatible para los archivos cargados.
-- **Despliegue en la nube**: Aplicación alojada en **Vercel**, integrada con Supabase y Cloudflare R2 mediante variables de entorno.
-- **Accesibilidad**: Permite consultar y descargar documentos de manera eficiente.
+- 📄 **Tesis y proyectos de grado**
+- 📰 **Artículos científicos**
+- 📑 **Informes técnicos**
+- 🎤 **Presentaciones académicas**
 
-### Arquitectura actual (Supabase + Vercel + Cloudflare R2)
+BUMI supera las limitaciones de los sistemas de archivo tradicionales ofreciendo una **plataforma colaborativa moderna** con arquitectura serverless, fomentando el descubrimiento de investigaciones, la replicación de estudios y la colaboración académica.
 
-- **Backend**: El backend original en Laravel/PHP fue **migrado a Supabase**, que ahora gestiona:
-  - Base de datos PostgreSQL.
-  - Autenticación y manejo de sesiones a través del SDK de Supabase (`@supabase/ssr`).
-- **Frontend**: Aplicación Next.js que se comunica con Supabase tanto desde el navegador como desde el servidor (RSC/API routes).
-- **Almacenamiento de PDFs**:
-  - La subida de archivos PDF se realiza contra **Cloudflare R2** mediante un endpoint interno de Next.js (`/api/r2-presign`) que genera URLs pre-firmadas.
-  - Los enlaces públicos de descarga se construyen a partir de la URL pública configurada en R2.
-- **Despliegue**:
-  - En producción, el proyecto está desplegado en **Vercel**, utilizando variables de entorno para conectarse a Supabase y a Cloudflare R2.
+---
 
+## ✨ Características Principales
+
+| Característica | Descripción |
+|----------------|-------------|
+| 🗄️ **Centralización** | Almacena y organiza materiales académicos en un solo lugar |
+| 🎨 **UI/UX Moderna** | Interfaz intuitiva diseñada para usuarios de todos los niveles |
+| 🔍 **Búsqueda avanzada** | Función de búsqueda insensible a acentos (`search_projects_unaccent`) |
+| 🔐 **Autenticación** | Gestión de sesiones con Supabase Auth |
+| 📊 **RLS Policies** | Control de acceso por roles y áreas de investigación |
+| 📁 **PDF Storage** | Almacenamiento en Cloudflare R2 con URLs pre-firmadas |
+| 🚀 **Serverless** | Despliegue escalable en Vercel |
+
+---
+
+## 🏗️ Arquitectura del Sistema
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    BUMI - Producción                    │
+├─────────────────────────────────────────────────────────┤
+│  Frontend:  Next.js 14 (App Router)                    │
+│  Backend:   Supabase (PostgreSQL + Auth)               │
+│  Storage:   Cloudflare R2 (PDFs)                       │
+│  Deploy:    Vercel                                     │
+│  Auth:      Supabase Authentication                    │
+│  DB:        PostgreSQL (via Supabase)                  │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Stack Tecnológico
+
+| Tecnología | Propósito |
+|------------|-----------|
+| **Next.js 14** | Frontend (migrado desde React.js/Create React App) |
+| **Supabase** | Backend BaaS (migrado desde Laravel/PHP) |
+| **PostgreSQL** | Base de datos |
+| **Cloudflare R2** | Almacenamiento de PDFs (S3-compatible) |
+| **Vercel** | Plataforma de despliegue |
+| **Supabase Auth** | Autenticación de usuarios |
+
+---
 ### Vista Previa
 
 ![pagina principal](https://i.ibb.co/rG5g3T03/vista-previa.webp)
@@ -114,6 +146,37 @@ BUMI-UNEFA supera las limitaciones de los sistemas de archivo tradicionales al o
 
    - Tu proyecto de **Supabase** (autenticación y base de datos).
    - Tu bucket de **Cloudflare R2** a través del endpoint `/api/r2-presign` para la subida y gestión de archivos PDF.
+
+---
+
+## 📖 Funcionalidades
+
+### Gestión de Proyectos
+- ✅ CRUD completo de proyectos de investigación
+- ✅ Búsqueda con función `search_projects_unaccent`
+- ✅ Filtrado por área, periodo, carrera, tutor y estudiante
+- ✅ Control de visibilidad por área de investigación
+
+### Gestión de Usuarios
+- ✅ Autenticación con Supabase Auth
+- ✅ Roles: administrador, tutor, estudiante
+- ✅ Asignación de áreas de investigación
+- ✅ Entity visibility policies
+
+### Gestión de Documentos
+- ✅ Subida de PDFs a Cloudflare R2
+- ✅ URLs pre-firmadas para seguridad
+- ✅ Enlaces públicos de descarga
+- ✅ Metadatos asociados a cada documento
+
+### Gestión de Entidades Académicas
+- ✅ Tutores (crear, editar, eliminar, buscar)
+- ✅ Estudiantes (crear, editar, eliminar, buscar)
+- ✅ Carreras académicas
+- ✅ Áreas de investigación
+- ✅ Grupos de trabajo
+
+---
 
 ## Contribuir
 
