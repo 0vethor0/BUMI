@@ -1,0 +1,25 @@
+name: "📖 Mejora de Documentación"
+description: "Reporta errores, falta de información o mejoras en los manuales."
+labels: ["documentation"]
+body:
+  - type: input
+    id: doc-title
+    attributes:
+      label: Título de la Documentación
+      placeholder: Breve descripción del tema
+    validations:
+      required: true
+  - type: textarea
+    id: doc-section
+    attributes:
+      label: Sección o Archivo afectado
+      placeholder: "Ej: README.md o sección de 'Configuración de Base de Datos'"
+    validations:
+      required: true
+  - type: textarea
+    id: improvement-detail
+    attributes:
+      label: ¿Qué falta o qué está mal?
+      placeholder: Describe el cambio sugerido o la información errónea.
+    validations:
+      required: true
