@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: "Soporte Comunitario"
+    url: "https://github.com/anomalyco/bumi-unefa/discussions"
+    about: "Si tienes preguntas generales, usa las Discussions."

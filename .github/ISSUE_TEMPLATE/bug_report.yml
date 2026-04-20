@@ -1,0 +1,56 @@
+name: "🐞 Reporte de Error (Bug)"
+description: "Informa sobre un problema técnico para que possamos solucionarlo."
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### ⚠️ ADVERTENCIA DE SEGURIDAD
+        **No incluyas credenciales, tokens de API, contraseñas ni datos sensibles.** Limpia cualquier log antes de enviarlo.
+  - type: input
+    id: bug-title
+    attributes:
+      label: Título del Error
+      placeholder: Describe brevemente el problema
+    validations:
+      required: true
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: Descripción del Error
+      placeholder: Describe qué está sucediendo de forma clara.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction-steps
+    attributes:
+      label: Pasos para Reproducir
+      placeholder: |
+        1. Iniciar sesión en...
+        2. Navegar a la sección...
+        3. Hacer clic en el botón...
+    validations:
+      required: true
+  - type: textarea
+    id: expected-actual
+    attributes:
+      label: Comportamiento Esperado vs. Actual
+      placeholder: ¿Qué debería haber pasado y qué ocurrió en su lugar?
+    validations:
+      required: true
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Entorno de Ejecución
+      options:
+        - Desarrollo (Local)
+        - Testing / Staging
+        - Producción
+    validations:
+      required: true
+  - type: textarea
+    id: logs-context
+    attributes:
+      label: Logs o Capturas
+      description: Pega aquí errores de consola o capturas relevantes.
+      render: shell

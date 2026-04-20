@@ -1,0 +1,45 @@
+name: "🚀 Solicitud de Funcionalidad"
+description: "Propón una nueva idea o mejora para el proyecto."
+labels: ["enhancement"]
+body:
+  - type: input
+    id: feature-title
+    attributes:
+      label: Título de la Funcionalidad
+      placeholder: Nombre corto de la característica
+    validations:
+      required: true
+  - type: textarea
+    id: user-problem
+    attributes:
+      label: ¿Qué problema resuelve esta funcionalidad?
+      placeholder: "Ej: Actualmente es difícil visualizar los datos de..."
+    validations:
+      required: true
+  - type: textarea
+    id: solution-proposal
+    attributes:
+      label: Propuesta de Solución
+      placeholder: Describe cómo te imaginas que funcionaría esta característica.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativas Consideradas
+      placeholder: ¿Has considerado otras formas de resolver este problema?
+  - type: textarea
+    id: dod
+    attributes:
+      label: Definición de Hecho (Definition of Done)
+      placeholder: "¿Qué criterios deben cumplirse para dar esta tarea por terminada?"
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Prioridad Estimada
+      options:
+        - Baja (Mejora estética/comodidad)
+        - Media (Ahorro de tiempo/flujo mejorado)
+        - Alta (Crítica para el negocio/usuario)
